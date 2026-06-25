@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="21vek IT Portal">
+  <defs>
+    <linearGradient id="brand" x1="6" y1="4" x2="26" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff1f7a"/>
+      <stop offset="1" stop-color="#ff7350"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#brand)"/>
+  <path fill="#fff" d="M8.5 10.5c0-2.2 1.8-4 4-4h5.2c2.2 0 4 1.8 4 4v3.1c0 2.2-1.8 4-4 4h-2.1v6.4H11.2V17.6h3.8c.9 0 1.6-.7 1.6-1.6v-2.2c0-.9-.7-1.6-1.6-1.6h-3c-.9 0-1.6.7-1.6 1.6v1.1H8.5v-4.4Z"/>
+  <path fill="#fff" d="M18.8 6.5h2.8v17.4h4.8v2.6h-7.6V6.5Z"/>
+</svg>

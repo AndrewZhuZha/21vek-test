@@ -282,8 +282,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const simTariff = document.getElementById('simTariff')?.value || '';
         const equipDesc = document.getElementById('equipDesc')?.value.trim() || '';
         const returnLocation = document.getElementById('returnLocation')?.value || '';
+        const needIssue = document.querySelector('input[name="needIssue"]:checked') ? 'Да' : 'Нет';
+        const needReturn = document.querySelector('input[name="needReturn"]:checked') ? 'Да' : 'Нет';
+        const computerName = document.getElementById('computerName')?.value.trim() || '';
+        const placeWrite = document.getElementById('placeWrite')?.value.trim() || '';
 
-        return `\nФИО сотрудника: ${fioEmp}\nДолжность: ${posEmp}\nОтдел: ${deptEmp}\nРуководитель: ${mgrEmp}\nДата первого рабочего дня: ${startEmp}\nНаблюдатели: ${obsEmp}\n\nДоступы к сервисам: ${accessServices}\nПочтовая рассылка: ${mailList}\nГруппа Битрикс: ${bitrixGroup}\nСетевые папки: ${netFolders}\nБазы 1С: ${bases1c}\nБанковские сервисы: ${bankServices}\nДоступ к серверам: ${serversAccess}\n\nОсновные устройства: ${mainDevices}\nПериферия: ${peripherals}\nSIM тариф: ${simTariff}\nОписание оборудования: ${equipDesc}\nГде получить: ${document.getElementById('receiveLocation')?.value || ''}\nГде сдавать: ${returnLocation}`;
+        return `\nФИО сотрудника: ${fioEmp}\nДолжность: ${posEmp}\nОтдел: ${deptEmp}\nРуководитель: ${mgrEmp}\nДата первого рабочего дня: ${startEmp}\nНаблюдатели: ${obsEmp}\n\nДоступы к сервисам: ${accessServices}\nПочтовая рассылка: ${mailList}\nГруппа Битрикс: ${bitrixGroup}\nСетевые папки: ${netFolders}\nБазы 1С: ${bases1c}\nБанковские сервисы: ${bankServices}\nДоступ к серверам: ${serversAccess}\n\nВыдавать оборудование: ${needIssue}\nСдавать оборудование: ${needReturn}\nИмя компьютера: ${computerName}\nМесто (уточнение): ${placeWrite}\nОсновные устройства: ${mainDevices}\nПериферия: ${peripherals}\nSIM тариф: ${simTariff}\nОписание оборудования: ${equipDesc}\nГде получить: ${document.getElementById('receiveLocation')?.value || ''}\nГде сдавать: ${returnLocation}`;
     }
 
     function validateStep1() {
@@ -516,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    setupModal(modalOverlay, { onClose: resetTaskModalState });
+    setupModal(modalOverlay, { onClose: resetTaskModalState, onCloseButtonClick: handleCancelClick });
     cancelBtn.addEventListener('click', handleCancelClick);
 
     dynamicForm.addEventListener('submit', (e) => {

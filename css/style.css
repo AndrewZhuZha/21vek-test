@@ -8,10 +8,99 @@ html {
     scroll-behavior: smooth;
 }
 
+@supports (view-transition-name: root) {
+    html {
+        view-transition-name: root;
+    }
+
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation-duration: var(--theme-switch-duration);
+        animation-timing-function: var(--theme-switch-ease);
+    }
+}
+
+html.theme-animating :where(
+    body,
+    .sidebar-nav,
+    .sidebar-nav__home-btn,
+    .sidebar-nav__item,
+    .header,
+    .header-link-btn,
+    .header-home-btn,
+    .search-field,
+    .search-input,
+    .section-nav,
+    .section-nav__chip,
+    .theme-toggle,
+    .reset-password-btn,
+    .btn-secondary,
+    .service-card,
+    .useful-card,
+    .group-title,
+    .search-empty-state,
+    .footer,
+    .page-bg__watermark
+) {
+    transition-property: background-color, color, border-color;
+    transition-duration: var(--theme-switch-duration);
+    transition-timing-function: var(--theme-switch-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html.theme-animating :where(
+        body,
+        .sidebar-nav,
+        .sidebar-nav__home-btn,
+        .sidebar-nav__item,
+        .header,
+        .header-link-btn,
+        .header-home-btn,
+        .search-field,
+        .search-input,
+        .section-nav,
+        .section-nav__chip,
+        .theme-toggle,
+        .reset-password-btn,
+        .btn-secondary,
+        .service-card,
+        .useful-card,
+        .group-title,
+        .search-empty-state,
+        .footer,
+        .page-bg__watermark
+    ) {
+        transition-duration: 0.01ms;
+    }
+
+    @supports (view-transition-name: root) {
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+            animation-duration: 0.01ms;
+        }
+    }
+}
+
 body {
     background: var(--surface-page);
     color: var(--text-primary);
     font-family: system-ui, "Segoe UI", "Roboto", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow-x: clip;
+}
+
+::selection {
+    background-color: var(--selection-bg);
+    color: var(--selection-color);
+}
+
+::-moz-selection {
+    background-color: var(--selection-bg);
+    color: var(--selection-color);
+}
+
+body.modal-open {
+    overscroll-behavior: contain;
+    touch-action: none;
 }
 
 a {
@@ -64,10 +153,13 @@ a {
     color: var(--text-muted);
     border: 0;
     background: transparent;
+    display: inline-flex;
+    align-items: center;
     font-size: 0.72rem;
     font-weight: 700;
-    min-height: auto;
-    padding: 0;
+    min-height: 30px;
+    padding: 0.08rem 0.16rem;
+    border-radius: 0.5rem;
     transition: color 0.12s ease;
 }
 
@@ -105,6 +197,35 @@ a {
     color: var(--text-secondary);
 }
 
+.header-home-btn {
+    display: inline-block;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    border-radius: 6px;
+    transition: color 0.12s ease, opacity 0.12s ease;
+}
+
+.header-home-btn:hover {
+    color: var(--accent-deep);
+}
+
+.header-home-btn:hover h1 {
+    color: var(--accent-deep);
+}
+
+.header-home-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-deep) 35%, transparent);
+}
+
+.header-home-btn h1 {
+    pointer-events: none;
+}
+
 .header-main p {
     color: var(--text-muted);
     margin-top: 0.18rem;
@@ -124,14 +245,19 @@ a {
 .header-search-row {
     flex: 1 1 560px;
     max-width: 620px;
-    min-width: 320px;
+    min-width: 0;
+}
+
+.search-field {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 #cardSearch {
-    flex: 1 1 auto;
-    max-width: none;
+    width: 100%;
     min-height: 38px;
-    padding: 0.54rem 0.82rem 0.54rem 2rem;
+    padding: 0.54rem 2.2rem 0.54rem 2rem;
     border-radius: 999px;
     border: 1px solid var(--border-subtle);
     background: color-mix(in srgb, var(--surface-card) 90%, transparent);
@@ -142,17 +268,76 @@ a {
     color: var(--text-primary);
     box-shadow: none;
     font-size: 0.9rem;
-    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+#cardSearch::-webkit-search-cancel-button,
+#cardSearch::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+}
+
+.search-field__clear {
+    position: absolute;
+    top: 50%;
+    right: 0.45rem;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.search-field__clear::before,
+.search-field__clear::after {
+    content: "";
+    position: absolute;
+    width: 12px;
+    height: 1.5px;
+    border-radius: 1px;
+    background: currentColor;
+}
+
+.search-field__clear::before {
+    transform: rotate(45deg);
+}
+
+.search-field__clear::after {
+    transform: rotate(-45deg);
+}
+
+.search-field__clear:hover {
+    background: color-mix(in srgb, var(--surface-card-soft) 80%, transparent);
+    color: var(--text-secondary);
+}
+
+.search-field__clear:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-deep) 30%, transparent);
 }
 
 #cardSearch::placeholder {
     color: color-mix(in srgb, var(--text-muted) 72%, transparent);
 }
 
-#cardSearch:focus-visible {
+#cardSearch:focus-visible,
+.search-field.is-search-hotkey #cardSearch {
     outline: none;
-    transform: translateY(-1px);
-    box-shadow: var(--focus-outline), var(--shadow-medium);
+    border-color: color-mix(in srgb, var(--accent-deep) 42%, var(--border-subtle));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-deep) 22%, transparent);
+}
+
+.search-field.is-search-hotkey #cardSearch {
+    border-color: color-mix(in srgb, var(--accent-deep) 55%, var(--border-subtle));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-deep) 28%, transparent);
 }
 
 .reset-password-btn {
@@ -208,12 +393,72 @@ a {
 }
 
 .footer-note {
-    margin-top: 2.2rem;
+    margin-top: 1.55rem;
     text-align: center;
-    font-size: 0.8rem;
+    font-size: 0.74rem;
     color: var(--text-muted);
     border-top: 1px solid var(--border-soft);
-    padding-top: 1.2rem;
+    padding-top: 0.72rem;
+}
+
+.footer-meta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.48rem;
+    line-height: 1.25;
+}
+
+.footer-meta-link,
+.footer-meta-item {
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.footer-meta-link {
+    text-decoration: none;
+    transition: color 0.12s ease;
+}
+
+.footer-meta-link:hover {
+    color: var(--text-secondary);
+}
+
+.footer-meta > * + * {
+    padding-left: 0.48rem;
+    border-left: 1px solid var(--border-soft);
+}
+
+.footer-caption {
+    margin-top: 0.32rem;
+    font-size: 0.69rem;
+    color: color-mix(in srgb, var(--text-muted) 92%, transparent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-empty-state {
+    margin: 0.35rem 0 1.25rem;
+    border: 1px dashed var(--border-subtle);
+    border-radius: 12px;
+    padding: 0.85rem 0.95rem;
+    background: color-mix(in srgb, var(--surface-card) 90%, transparent);
+    display: grid;
+    gap: 0.65rem;
+    justify-items: center;
+    text-align: center;
+    color: var(--text-accent);
+}
+
+.search-empty-state p {
+    font-size: 0.88rem;
+}
+
+.search-empty-state__reset {
+    min-height: 40px;
+    min-width: 170px;
 }
 
 .modal-overlay {
@@ -243,7 +488,8 @@ a {
     padding: 1.2rem;
     border: 1px solid var(--border-soft);
     max-height: 92vh;
-    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     box-shadow: var(--shadow-modal);
     transform: scale(0.98);
     transition: transform 0.18s ease;
@@ -597,28 +843,118 @@ a {
     background: color-mix(in srgb, var(--surface-card-soft) 40%, transparent);
 }
 
-@media (max-width: 680px) {
+@media (max-width: 1023px) {
     .header {
-        padding: 0.35rem 0.06rem 0.22rem;
+        padding: 0.34rem 0.06rem 0.24rem;
     }
 
     .header-utility {
-        align-items: center;
+        align-items: flex-start;
         flex-direction: row;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         justify-content: flex-start;
-        gap: 0.3rem;
+        gap: 0.35rem;
+        margin-bottom: 0.34rem;
+    }
+
+    .header-links {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 0.35rem 0.42rem;
+    }
+
+    .header-link-btn {
+        font-size: 0.74rem;
+        min-height: 40px;
+        padding: 0.18rem 0.24rem;
+    }
+
+    .header-main-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.54rem;
+    }
+
+    .header-main {
+        flex: 1 1 auto;
+    }
+
+    .header h1 {
+        font-size: 1rem;
+    }
+
+    .header-main p {
+        font-size: 0.82rem;
+        margin-top: 0.22rem;
+    }
+
+    .header-search-row {
+        max-width: none;
+        min-width: 0;
+        width: 100%;
+        flex: 1 1 auto;
+    }
+
+    .search-bar {
+        margin-top: 0.14rem;
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    #cardSearch {
+        min-height: 44px;
+    }
+
+    .header-search-row .theme-toggle {
+        min-height: 44px;
+        min-width: 44px;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .reset-password-btn {
+        justify-content: center;
+    }
+
+    .header-reset-btn {
+        width: auto;
+        min-height: 44px;
+        white-space: nowrap;
+    }
+
+    .footer-note {
+        margin-top: 1.4rem;
+        padding-top: 0.62rem;
+    }
+
+    .footer-caption {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    .modal {
+        width: min(96%, 720px);
+        padding: 1rem;
+        border-radius: 1rem;
+    }
+}
+
+@media (max-width: 680px) {
+    .header-utility {
+        gap: 0.28rem;
         margin-bottom: 0.3rem;
     }
 
     .header-links {
-        width: auto;
-        justify-content: flex-start;
-        gap: 0.5rem;
+        gap: 0.3rem 0.4rem;
     }
 
     .header-link-btn {
-        font-size: 0.68rem;
+        font-size: 0.7rem;
+        min-height: 38px;
+        padding: 0.15rem 0.2rem;
     }
 
     .header h1 {
@@ -630,37 +966,9 @@ a {
         margin-top: 0.2rem;
     }
 
-    .header-main-row {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.45rem;
-    }
-
-    .header-search-row {
-        max-width: none;
-        min-width: 0;
-    }
-
-    .search-bar {
-        margin-top: 0.1rem;
-        flex-direction: row;
-        align-items: center;
-    }
-
-    .reset-password-btn {
-        justify-content: center;
-    }
-
-    .header-reset-btn {
-        width: auto;
-        min-height: 36px;
-        white-space: nowrap;
-    }
-
-    .modal {
-        width: 96%;
-        padding: 1rem;
-        border-radius: 1rem;
+    .search-empty-state {
+        margin-bottom: 1rem;
+        padding: 0.74rem 0.75rem;
     }
 
     .modal h3 {

@@ -42,6 +42,7 @@ window.PortalModal = (function () {
         activeOverlay = overlay;
         overlay.classList.add('active');
         overlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
         document.addEventListener('keydown', onKeydown);
 
         const dialog = overlay.querySelector('[role="dialog"]');
@@ -57,6 +58,9 @@ window.PortalModal = (function () {
             activeOverlay = null;
             document.removeEventListener('keydown', onKeydown);
         }
+        if (!activeOverlay) {
+            document.body.classList.remove('modal-open');
+        }
         const onClose = callbacks.get(overlay);
         if (onClose) onClose();
         if (lastFocus && typeof lastFocus.focus === 'function') {
@@ -66,9 +70,19 @@ window.PortalModal = (function () {
     }
 
     function setup(overlay, options) {
-        const { closeBtn, onClose } = options || {};
+        const { closeBtn, onClose, onCloseButtonClick } = options || {};
         overlay.setAttribute('aria-hidden', 'true');
         if (onClose) callbacks.set(overlay, onClose);
+
+        overlay.querySelectorAll('.modal__close').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if (typeof onCloseButtonClick === 'function') {
+                    onCloseButtonClick();
+                    return;
+                }
+                close(overlay);
+            });
+        });
 
         if (closeBtn) {
             closeBtn.addEventListener('click', () => close(overlay));

@@ -19,6 +19,7 @@ window.PortalConfig = {
         knowledge: 'https://wiki.company.ru'
     },
     themeStorageKey: 'portal-theme',
+    themeTransitionMs: 140,
     defaultTheme: 'light',
     demoMode: true
 };

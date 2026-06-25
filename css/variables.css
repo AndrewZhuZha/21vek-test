@@ -35,4 +35,15 @@
 
     --watermark-opacity: 0.045;
     --blob-opacity: 0.22;
+
+    --theme-switch-duration: 140ms;
+    --theme-switch-ease: cubic-bezier(0.3, 0.9, 0.4, 1);
+
+    --scrollbar-size: 8px;
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: color-mix(in srgb, var(--text-muted) 42%, transparent);
+    --scrollbar-thumb-hover: color-mix(in srgb, var(--accent-deep) 52%, var(--text-muted) 18%);
+
+    --selection-bg: color-mix(in srgb, var(--accent-pink-start) 26%, var(--accent-pink-end) 10%);
+    --selection-color: var(--text-primary);
 }

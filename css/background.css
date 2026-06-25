@@ -27,7 +27,6 @@
     border-radius: 50%;
     filter: blur(78px);
     opacity: var(--blob-opacity);
-    will-change: transform;
 }
 
 .page-bg__blob--1 {
@@ -68,4 +67,10 @@
     .page-bg__blob {
         animation: none;
     }
+}
+
+html.theme-animating .page-bg__blob,
+html.theme-switching .page-bg__blob,
+html.is-search-filtering .page-bg__blob {
+    animation-play-state: paused;
 }

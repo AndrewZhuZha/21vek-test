@@ -4,6 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>ИТ-портал | Заявки и полезные сервисы</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="assets/favicon.svg">
+    <script>
+        (function () {
+            const storageKey = 'portal-theme';
+            const cookieName = storageKey + '=';
+
+            function readThemeCookie() {
+                const entries = document.cookie ? document.cookie.split('; ') : [];
+                for (let i = 0; i < entries.length; i += 1) {
+                    if (entries[i].indexOf(cookieName) === 0) {
+                        const value = entries[i].slice(cookieName.length);
+                        if (value === 'dark' || value === 'light') return value;
+                    }
+                }
+                return null;
+            }
+
+            try {
+                const stored = window.localStorage.getItem(storageKey);
+                const initial = stored === 'dark' || stored === 'light' ? stored : readThemeCookie();
+                if (initial) {
+                    document.documentElement.setAttribute('data-theme', initial);
+                    document.documentElement.setAttribute('data-user-theme', initial);
+                }
+            } catch (error) {
+                const fallback = readThemeCookie();
+                if (fallback) {
+                    document.documentElement.setAttribute('data-theme', fallback);
+                    document.documentElement.setAttribute('data-user-theme', fallback);
+                }
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/background.css">
     <link rel="stylesheet" href="css/layout.css">
@@ -11,9 +45,30 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/cards.css">
     <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/scrollbars.css">
     <link rel="stylesheet" href="css/modal.css">
+    <script>
+        (function () {
+            function isPortalModalOpen() {
+                return Boolean(document.querySelector('.modal-overlay.active'));
+            }
+
+            window.addEventListener('keydown', function (event) {
+                if (isPortalModalOpen()) return;
+                const isFindHotkey = (event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === 'f';
+                if (!isFindHotkey) return;
+                event.preventDefault();
+                event.stopPropagation();
+                if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+                window.dispatchEvent(new CustomEvent('portal:focus-search'));
+            }, true);
+        })();
+    </script>
 </head>
 <body>
+<div class="search-thinking hidden" id="searchThinking" role="status" aria-live="polite" aria-label="Обновление результатов" aria-hidden="true">
+    <span class="search-thinking__spinner" aria-hidden="true"></span>
+</div>
 <div class="page-bg" aria-hidden="true">
     <div class="page-bg__watermark">21vek.by</div>
     <div class="page-bg__blob page-bg__blob--1"></div>
@@ -24,7 +79,9 @@
     <aside class="sidebar-nav" aria-label="Навигация по разделам">
         <div class="sidebar-nav__inner">
             <div class="sidebar-nav__brand">
-                <img src="assets/logo-21vek.svg" alt="21vek">
+                <button class="sidebar-nav__home-btn" id="sidebarHomeBtn" type="button" aria-label="На главную">
+                    <img src="assets/logo-21vek.svg" alt="">
+                </button>
             </div>
             <nav class="sidebar-nav__list" id="sidebarNavList" aria-label="Разделы портала"></nav>
             <div class="sidebar-nav__footer">
@@ -50,11 +107,16 @@
                 </div>
                 <div class="header-main-row">
                     <div class="header-main">
-                        <h1>ИТ-портал 21Vek</h1>
+                        <button class="header-home-btn" id="homeTitleBtn" type="button">
+                            <h1>ИТ-портал 21Vek</h1>
+                        </button>
                         <p>Найдите нужный сервис и оформите ИТ-заявку за пару кликов.</p>
                     </div>
                     <div class="search-bar header-search-row">
-                        <input type="search" id="cardSearch" placeholder="Поиск..." aria-label="Поиск по услугам">
+                        <div class="search-field">
+                            <input type="search" id="cardSearch" placeholder="Поиск..." aria-label="Поиск по услугам" autocomplete="off">
+                            <button class="search-field__clear" id="searchClearBtn" type="button" aria-label="Очистить поиск" hidden></button>
+                        </div>
                         <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="Переключить тему">
                             <span class="theme-toggle__icon" aria-hidden="true">🌙</span>
                             <span class="theme-toggle__label">Тема</span>
@@ -67,6 +129,11 @@
                 <div class="section-nav__chips" id="sectionNavChips"></div>
                 <button id="resetPasswordBtn" class="reset-password-btn header-reset-btn section-reset-btn" type="button">Сбросить пароль</button>
             </nav>
+
+            <section class="search-empty-state hidden" id="searchEmptyState" role="status" aria-live="polite" aria-hidden="true">
+                <p>Ничего не найдено. Уточните запрос или сбросьте фильтр.</p>
+                <button class="btn-secondary search-empty-state__reset" id="clearSearchBtn" type="button">Сбросить поиск</button>
+            </section>
 
             <!-- 1. Техническая поддержка / сбои ПО -->
             <section class="section-group" id="section-support" data-section-id="section-support">
@@ -272,8 +339,11 @@
             </section>
 
             <div class="footer-note" id="pageFooter">
-                ⚡ Нажмите на карточку заявки — откроется форма для создания задачи в Яндекс Трекере.<br>
-                Раздел «Полезное» содержит внешние ссылки на CMDB, справочник и базу знаний.
+                <div class="footer-meta" aria-label="Контакты и служебная информация">
+                    <a class="footer-meta-link" href="mailto:itsupport@21vek.by">itsupport@21vek.by</a>
+                    <span class="footer-meta-item">© 2026 IT Support 21vek</span>
+                </div>
+                <p class="footer-caption">Карточка открывает заявку, «Полезное» ведет на внешние сервисы.</p>
             </div>
         </div>
     </main>
@@ -282,6 +352,7 @@
 <!-- Модальное окно для создания задач -->
 <div id="taskModal" class="modal-overlay" role="presentation" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc" tabindex="-1">
+        <button type="button" class="modal__close" aria-label="Закрыть"></button>
         <h3 id="modalTitle">Создание заявки</h3>
         <p id="modalDesc">Заполните данные — задача попадёт в очередь Яндекс Трекера.</p>
         <form id="dynamicForm" novalidate>
@@ -309,6 +380,7 @@
 <!-- Модальное окно для сброса пароля -->
 <div id="pwResetModal" class="modal-overlay" role="presentation" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pwModalTitle" aria-describedby="pwModalDesc" tabindex="-1">
+        <button type="button" class="modal__close" aria-label="Закрыть"></button>
         <h3 id="pwModalTitle">Сброс пароля</h3>
         <p id="pwModalDesc">Заполните данные для запроса сброса пароля.</p>
         <form id="pwResetForm" novalidate>
@@ -337,6 +409,8 @@
 <script src="js/form.js"></script>
 <script src="js/theme.js"></script>
 <script src="js/nav.js"></script>
+<script src="js/search-index.js"></script>
+<script src="js/search.js"></script>
 <script src="js/cards.js"></script>
 <script src="js/app.js"></script>
 </body>

@@ -29,4 +29,10 @@
 
     --watermark-opacity: 0.06;
     --blob-opacity: 0.24;
+
+    --scrollbar-thumb: color-mix(in srgb, var(--text-muted) 48%, transparent);
+    --scrollbar-thumb-hover: color-mix(in srgb, var(--accent-pink-start) 42%, var(--text-muted) 22%);
+
+    --selection-bg: color-mix(in srgb, var(--accent-pink-start) 42%, var(--accent-deep) 18%);
+    --selection-color: #ffffff;
 }

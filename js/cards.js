@@ -1,14 +1,60 @@
 // Cards filtering with smooth hide/show and section visibility sync.
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('cardSearch');
+    const searchField = document.querySelector('.search-field');
+    const searchClearBtn = document.getElementById('searchClearBtn');
+    const emptyState = document.getElementById('searchEmptyState');
+    const thinkingState = document.getElementById('searchThinking');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const homeTitleBtn = document.getElementById('homeTitleBtn');
+    const sidebarHomeBtn = document.getElementById('sidebarHomeBtn');
     const hideTimers = new WeakMap();
+    const HIDE_ANIMATION_MS = 180;
+    const VISIBILITY_SYNC_DELAY_MS = HIDE_ANIMATION_MS + 16;
+    const FILTER_DEBOUNCE_MS = 110;
+    const THINKING_MIN_MS = 180;
+    const HOTKEY_HIGHLIGHT_MS = 1200;
+    let filterDebounceTimer = null;
+    let visibilitySyncTimer = null;
+    let thinkingShownAt = 0;
+    let thinkingHideTimer = null;
+    let hotkeyHighlightTimer = null;
+    let activeFilterCount = 0;
+    let cachedCards = null;
+    let cachedGroups = null;
 
     function getCards() {
-        return Array.from(document.querySelectorAll('.service-card'));
+        if (!cachedCards) {
+            cachedCards = Array.from(document.querySelectorAll('.service-card'));
+        }
+        return cachedCards;
     }
 
     function getGroups() {
-        return Array.from(document.querySelectorAll('.section-group'));
+        if (!cachedGroups) {
+            cachedGroups = Array.from(document.querySelectorAll('.section-group'));
+        }
+        return cachedGroups;
+    }
+
+    function beginFilterAnimation() {
+        activeFilterCount += 1;
+        document.documentElement.classList.add('is-search-filtering');
+    }
+
+    function endFilterAnimation() {
+        activeFilterCount = Math.max(0, activeFilterCount - 1);
+        if (activeFilterCount === 0) {
+            document.documentElement.classList.remove('is-search-filtering');
+        }
+    }
+
+    function scheduleWillChangeReset(card) {
+        window.setTimeout(() => {
+            if (!card.classList.contains('is-fading')) {
+                card.style.willChange = '';
+            }
+        }, HIDE_ANIMATION_MS);
     }
 
     function clearHideTimer(card) {
@@ -19,32 +65,94 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function isModalOpen() {
+        return Boolean(document.querySelector('.modal-overlay.active'));
+    }
+
+    function updateSearchFieldState() {
+        if (!searchInput) return;
+        const hasValue = Boolean(searchInput.value.trim());
+        if (searchField) {
+            searchField.classList.toggle('has-value', hasValue);
+        }
+        if (searchClearBtn) {
+            searchClearBtn.hidden = !hasValue;
+        }
+    }
+
+    function setThinkingState(active) {
+        if (!thinkingState) return;
+        if (thinkingHideTimer) {
+            clearTimeout(thinkingHideTimer);
+            thinkingHideTimer = null;
+        }
+
+        if (active) {
+            if (thinkingState.classList.contains('hidden')) {
+                thinkingState.classList.remove('hidden');
+                thinkingState.setAttribute('aria-hidden', 'false');
+                thinkingShownAt = Date.now();
+            }
+            return;
+        }
+
+        const elapsed = Date.now() - thinkingShownAt;
+        const delay = Math.max(0, THINKING_MIN_MS - elapsed);
+        thinkingHideTimer = setTimeout(() => {
+            thinkingState.classList.add('hidden');
+            thinkingState.setAttribute('aria-hidden', 'true');
+            thinkingHideTimer = null;
+        }, delay);
+    }
+
     function showCard(card) {
         clearHideTimer(card);
+        card.style.willChange = 'opacity';
         if (card.classList.contains('is-hidden')) {
             card.classList.remove('is-hidden');
+            card.classList.add('is-fading');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    card.classList.remove('is-fading');
+                    scheduleWillChangeReset(card);
+                });
+            });
+            return;
         }
-        requestAnimationFrame(() => card.classList.remove('is-filtering-out'));
+        card.classList.remove('is-fading');
+        scheduleWillChangeReset(card);
     }
 
     function hideCard(card) {
         if (card.classList.contains('is-hidden')) return;
         clearHideTimer(card);
-        card.classList.add('is-filtering-out');
+        card.style.willChange = 'opacity';
+        card.classList.add('is-fading');
         const timer = setTimeout(() => {
             card.classList.add('is-hidden');
-            card.classList.remove('is-filtering-out');
+            card.classList.remove('is-fading');
+            card.style.willChange = '';
             hideTimers.delete(card);
-        }, 150);
+        }, HIDE_ANIMATION_MS);
         hideTimers.set(card, timer);
     }
 
     function updateGroupsVisibility() {
+        let hasVisibleCards = false;
         getGroups().forEach(group => {
             const hasVisible = Array.from(group.querySelectorAll('.service-card'))
                 .some(card => !card.classList.contains('is-hidden'));
             group.classList.toggle('is-hidden', !hasVisible);
+            hasVisibleCards = hasVisibleCards || hasVisible;
         });
+        return hasVisibleCards;
+    }
+
+    function updateEmptyState(query, hasVisibleCards) {
+        if (!emptyState) return;
+        const showEmptyState = Boolean((query || '').trim()) && !hasVisibleCards;
+        emptyState.classList.toggle('hidden', !showEmptyState);
+        emptyState.setAttribute('aria-hidden', String(!showEmptyState));
     }
 
     function dispatchFilterChanged() {
@@ -63,28 +171,124 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function syncFilterState(query) {
+        const hasVisibleCards = updateGroupsVisibility();
+        updateEmptyState(query, hasVisibleCards);
+        setThinkingState(false);
+        endFilterAnimation();
+        dispatchFilterChanged();
+    }
+
+    function scheduleFilterStateSync(query) {
+        if (visibilitySyncTimer) clearTimeout(visibilitySyncTimer);
+        visibilitySyncTimer = setTimeout(() => {
+            visibilitySyncTimer = null;
+            syncFilterState(query);
+        }, VISIBILITY_SYNC_DELAY_MS);
+    }
+
     function filterCards() {
-        const query = (searchInput?.value || '').trim().toLowerCase();
+        const query = searchInput?.value || '';
+        const normalizedQuery = query.trim().toLowerCase();
+        const searchEngine = window.PortalSearch;
+        const matcher = searchEngine?.createMatcher ? searchEngine.createMatcher(query) : null;
+        const cards = getCards();
 
-        getCards().forEach(card => {
-            const title = `${card.dataset.title || ''} ${card.querySelector('.card-title')?.textContent || ''}`;
-            const desc = card.querySelector('.card-desc')?.textContent || '';
-            const full = `${title} ${desc} ${card.textContent}`.toLowerCase();
-            const matches = !query || full.includes(query);
-            if (matches) showCard(card);
-            else hideCard(card);
+        requestAnimationFrame(() => {
+            cards.forEach(card => {
+                const title = `${card.dataset.title || ''} ${card.querySelector('.card-title')?.textContent || ''}`;
+                const desc = card.querySelector('.card-desc')?.textContent || '';
+                const full = `${title} ${desc} ${card.textContent}`.toLowerCase();
+                const matches = matcher
+                    ? matcher.matchesCard(card)
+                    : (!normalizedQuery || full.includes(normalizedQuery));
+                if (matches) showCard(card);
+                else hideCard(card);
+            });
+
+            updateSearchFieldState();
+            scheduleFilterStateSync(query);
         });
+    }
 
-        setTimeout(() => {
-            updateGroupsVisibility();
-            dispatchFilterChanged();
-        }, 170);
+    function queueFilter() {
+        if (filterDebounceTimer) clearTimeout(filterDebounceTimer);
+        beginFilterAnimation();
+        setThinkingState(true);
+        updateSearchFieldState();
+        filterDebounceTimer = setTimeout(() => {
+            filterDebounceTimer = null;
+            filterCards();
+        }, FILTER_DEBOUNCE_MS);
+    }
+
+    function goToHome() {
+        if (!searchInput) return;
+        if (filterDebounceTimer) {
+            clearTimeout(filterDebounceTimer);
+            filterDebounceTimer = null;
+        }
+        beginFilterAnimation();
+        searchInput.value = '';
+        updateSearchFieldState();
+        searchInput.blur();
+        setThinkingState(false);
+        filterCards();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function focusSearchWithHotkey() {
+        if (!searchInput) return;
+        searchInput.focus({ preventScroll: true });
+        if (!searchField) return;
+        searchField.classList.add('is-search-hotkey');
+        if (hotkeyHighlightTimer) clearTimeout(hotkeyHighlightTimer);
+        hotkeyHighlightTimer = setTimeout(() => {
+            searchField.classList.remove('is-search-hotkey');
+            hotkeyHighlightTimer = null;
+        }, HOTKEY_HIGHLIGHT_MS);
+    }
+
+    function handleGlobalKeydown(event) {
+        if (isModalOpen()) return;
+
+        if (event.key === 'Escape' && searchInput?.value.trim()) {
+            event.preventDefault();
+            goToHome();
+        }
     }
 
     applySectionOffset();
     window.addEventListener('resize', applySectionOffset);
+    window.addEventListener('orientationchange', () => {
+        window.setTimeout(applySectionOffset, 80);
+    });
+    document.addEventListener('portal:filter-changed', applySectionOffset);
 
     if (searchInput) {
-        searchInput.addEventListener('input', filterCards);
+        searchInput.addEventListener('input', queueFilter);
     }
+
+    if (searchClearBtn) {
+        searchClearBtn.addEventListener('click', goToHome);
+    }
+
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', goToHome);
+    }
+
+    if (homeTitleBtn) {
+        homeTitleBtn.addEventListener('click', goToHome);
+    }
+
+    if (sidebarHomeBtn) {
+        sidebarHomeBtn.addEventListener('click', goToHome);
+    }
+
+    window.addEventListener('portal:focus-search', focusSearchWithHotkey);
+    window.addEventListener('keydown', handleGlobalKeydown, true);
+
+    setThinkingState(false);
+    updateSearchFieldState();
+    filterCards();
 });
