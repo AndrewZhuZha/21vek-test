@@ -1,0 +1,4 @@
+url
+https://api.tracker.yandex.net/api/v4/public/events/github/f5b570ec-f39a-4d65-9b52-eef5be54d341/fc4d5d4e-2680-459a-902a-f5a015a075e4
+token
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ2IjoxLCJrIjoiNmEzN2VmMWE1YmRhYjcxNGMwMzFkMzZmNDdkOTUyNjEyODM5OTUzN2YxZTYwMDVhY2RiNGE5YzJkNjEyMDY3ZCIsImlhdCI6MTc4MjM5ODQ4OSwiaWQiOiJmYzRkNWQ0ZS0yNjgwLTQ1OWEtOTAyYS1mNWEwMTVhMDc1ZTQifQ.HVFBm9vxP9UvpPf0hCbI0x-FbSDpvxewvdeVKCLUNSM

@@ -553,19 +553,3 @@
     if (closePw && pwModal) closePw.addEventListener('click', () => pwModal.classList.remove('active'));
     if (pwModal) pwModal.addEventListener('click', (e) => { if (e.target === pwModal) pwModal.classList.remove('active'); });
 
-    if (pwForm) {
-        pwForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const target = document.getElementById('targetFio')?.value.trim();
-            const requester = document.getElementById('requesterFio')?.value.trim();
-            const reason = document.getElementById('resetReason')?.value.trim();
-            if (!target) { alert('Введите ФИО, кому сбросить пароль'); return; }
-            if (!requester) { alert('Введите ФИО, кто запрашивает'); return; }
-            if (!reason) { alert('Укажите причину сброса пароля'); return; }
-            const payload = { target, requester, reason, source: 'web-reset' };
-            console.log('Password reset request', payload);
-            alert('Запрос на сброс пароля отправлен.');
-            pwModal.classList.remove('active');
-            pwForm.reset();
-        });
-    }
