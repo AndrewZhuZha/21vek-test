@@ -1,0 +1,38 @@
+:root {
+    --accent-pink-start: #ff1f7a;
+    --accent-pink-end: #ff7350;
+    --accent-deep: #c4006b;
+
+    --surface-page: #f6f7f9;
+    --surface-card: #ffffff;
+    --surface-card-soft: #f8f5ff;
+    --surface-elevated: #ffffff;
+    --surface-muted: #f3f4f6;
+
+    --text-primary: #111827;
+    --text-secondary: #3b2a4a;
+    --text-muted: #6b7280;
+    --text-accent: #2c5a74;
+
+    --border-subtle: rgba(16, 24, 40, 0.08);
+    --border-soft: rgba(16, 24, 40, 0.04);
+    --border-brand-soft: rgba(221, 212, 255, 0.8);
+
+    --overlay-bg: rgba(0, 0, 0, 0.5);
+
+    --shadow-soft: 0 6px 18px rgba(16, 24, 40, 0.04);
+    --shadow-medium: 0 10px 30px rgba(16, 24, 40, 0.06);
+    --shadow-strong: 0 20px 30px rgba(16, 24, 40, 0.06);
+    --shadow-modal: 0 30px 60px rgba(2, 6, 23, 0.25);
+
+    --focus-outline: 0 0 0 3px rgba(196, 0, 107, 0.25);
+
+    --nav-chip-bg: #ffffff;
+    --nav-chip-text: #374151;
+    --nav-chip-border: rgba(16, 24, 40, 0.08);
+    --nav-chip-active-bg: linear-gradient(90deg, var(--accent-pink-start), var(--accent-pink-end));
+    --nav-chip-active-text: #ffffff;
+
+    --watermark-opacity: 0.045;
+    --blob-opacity: 0.22;
+}

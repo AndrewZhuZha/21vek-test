@@ -1,293 +1,343 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>ИТ-портал | Заявки и полезные сервисы</title>
-    
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/modal.css">
-<link rel="stylesheet" href="css/cards.css">
-
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/background.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/nav.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/cards.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/modal.css">
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>21Vek Отдел технического сопровожденияя</h1>
-        <p>Выберите нужную категорию — мы создадим задачу в Яндекс Трекере. Также переходите в раздел <a href="#pageFooter" class="in-header-anchor">«Полезное»</a> для быстрой информации.</p>
-        <div class="search-bar">
-            <input type="search" id="cardSearch" placeholder="Поиск..." aria-label="Поиск по услугам">
-            <button id="resetPasswordBtn" class="reset-password-btn" type="button">Сбросить пароль</button>
-        </div>
-    </div>
+<div class="page-bg" aria-hidden="true">
+    <div class="page-bg__watermark">21vek.by</div>
+    <div class="page-bg__blob page-bg__blob--1"></div>
+    <div class="page-bg__blob page-bg__blob--2"></div>
+</div>
 
-    <!-- 1. Техническая поддержка / сбои ПО -->
-    <div class="section-group" id="usefulSection">
-        <div class="group-title"><span>🆘</span> <span>Техническая поддержка и сбои</span></div>
-        <div class="cards-grid">
-            <div class="service-card" data-request-type="tech_support" data-title="Техническая поддержка (запрос)">
-                <div class="card-icon">💬</div>
-                <div class="card-content">
-                    <div class="card-title">Техническая поддержка — запрос</div>
-                    <div class="card-desc">Консультация, помощь в работе с ПО, настройка рабочих мест</div>
-                </div>
+<div class="app-layout">
+    <aside class="sidebar-nav" aria-label="Навигация по разделам">
+        <div class="sidebar-nav__inner">
+            <div class="sidebar-nav__brand">
+                <img src="assets/logo-21vek.svg" alt="21vek">
             </div>
-            <div class="service-card" data-request-type="software_issues" data-title="Сбои и ошибки ПО">
-                <div class="card-icon">🐞</div>
-                <div class="card-content">
-                    <div class="card-title">Сбои и ошибки ПО</div>
-                    <div class="card-desc">Зависания, критический сбой, аварийное завершение программ</div>
-                </div>
+            <nav class="sidebar-nav__list" id="sidebarNavList" aria-label="Разделы портала"></nav>
+            <div class="sidebar-nav__footer">
+                <button id="sidebarResetPasswordBtn" class="reset-password-btn sidebar-reset-btn" type="button">Сбросить пароль</button>
+                <button class="theme-toggle" id="sidebarThemeToggle" type="button" aria-pressed="false" aria-label="Переключить тему">
+                    <span class="theme-toggle__icon" aria-hidden="true">🌙</span>
+                    <span class="theme-toggle__label">Тёмная тема</span>
+                </button>
             </div>
         </div>
+    </aside>
 
-                <!-- Модальное окно для сброса пароля -->
-                <div id="pwResetModal" class="modal-overlay">
-                    <div class="modal">
-                        <h3>Сброс пароля</h3>
-                        <p>Заполните данные для запроса сброса пароля.</p>
-                        <form id="pwResetForm">
-                            <div class="form-group">
-                                <label>ФИО, кому сбросить пароль *</label>
-                                <input type="text" id="targetFio" required>
-                            </div>
-                            <div class="form-group">
-                                <label>ФИО, кто запрашивает сброс *</label>
-                                <input type="text" id="requesterFio" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Причина — детальное описание *</label>
-                                <textarea id="resetReason" rows="5" maxlength="1000" required></textarea>
-                            </div>
-                            <div class="modal-actions">
-                                <button type="button" class="btn-secondary" id="closePwModal">Отмена</button>
-                                <button type="submit" class="btn-primary">Отправить запрос</button>
-                            </div>
-                        </form>
+    <main class="main-content">
+        <div class="container">
+            <header class="header">
+                <div class="header-utility">
+                    <div class="header-links">
+                        <a class="header-link-btn" href="https://wiki.company.ru" target="_blank" rel="noopener noreferrer">WIKI</a>
+                        <a class="header-link-btn" href="https://wiki.company.ru/learning" target="_blank" rel="noopener noreferrer">Обучение</a>
+                        <span class="header-link-btn header-link-btn--placeholder" aria-disabled="true" title="Раздел в разработке">FAQ</span>
+                        <span class="header-link-btn header-link-btn--placeholder" aria-disabled="true" title="Раздел в разработке">Регламенты</span>
                     </div>
                 </div>
-    </div>
+                <div class="header-main-row">
+                    <div class="header-main">
+                        <h1>ИТ-портал 21Vek</h1>
+                        <p>Найдите нужный сервис и оформите ИТ-заявку за пару кликов.</p>
+                    </div>
+                    <div class="search-bar header-search-row">
+                        <input type="search" id="cardSearch" placeholder="Поиск..." aria-label="Поиск по услугам">
+                        <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="Переключить тему">
+                            <span class="theme-toggle__icon" aria-hidden="true">🌙</span>
+                            <span class="theme-toggle__label">Тема</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
 
-    <!-- 2. Оборудование (Выдача, возврат, передача) -->
-    <div class="section-group">
-        <div class="group-title"><span>💻</span> <span>Оборудование</span></div>
-        <div class="cards-grid">
-            <div class="service-card" data-request-type="equipment_issue" data-title="Выдача оборудования">
-                <div class="card-icon">📦</div>
-                <div class="card-content">
-                    <div class="card-title">Выдача оборудования</div>
-                    <div class="card-desc">Новый ПК, ноутбук, монитор, периферия сотруднику</div>
+            <nav class="section-nav" aria-label="Быстрый переход по разделам">
+                <div class="section-nav__chips" id="sectionNavChips"></div>
+                <button id="resetPasswordBtn" class="reset-password-btn header-reset-btn section-reset-btn" type="button">Сбросить пароль</button>
+            </nav>
+
+            <!-- 1. Техническая поддержка / сбои ПО -->
+            <section class="section-group" id="section-support" data-section-id="section-support">
+                <div class="group-title"><span>🆘</span> <span>Техническая поддержка и сбои</span></div>
+                <div class="cards-grid">
+                    <div class="service-card" data-request-type="tech_support" data-title="Техническая поддержка (запрос)">
+                        <div class="card-icon">💬</div>
+                        <div class="card-content">
+                            <div class="card-title">Техническая поддержка — запрос</div>
+                            <div class="card-desc">Консультация, помощь в работе с ПО, настройка рабочих мест</div>
+                        </div>
+                    </div>
+                    <div class="service-card" data-request-type="software_issues" data-title="Сбои и ошибки ПО">
+                        <div class="card-icon">🐞</div>
+                        <div class="card-content">
+                            <div class="card-title">Сбои и ошибки ПО</div>
+                            <div class="card-desc">Зависания, критический сбой, аварийное завершение программ</div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="service-card" data-request-type="equipment_return" data-title="Возврат оборудования">
-                <div class="card-icon">↩️</div>
-                <div class="card-content">
-                    <div class="card-title">Возврат оборудования</div>
-                    <div class="card-desc">Сдача техники при увольнении, замена или списание</div>
+            </section>
+
+            <!-- 2. Оборудование (Выдача, возврат, передача) -->
+            <section class="section-group" id="section-equipment" data-section-id="section-equipment">
+                <div class="group-title"><span>💻</span> <span>Оборудование</span></div>
+                <div class="cards-grid">
+                    <div class="service-card" data-request-type="equipment_issue" data-title="Выдача оборудования">
+                        <div class="card-icon">📦</div>
+                        <div class="card-content">
+                            <div class="card-title">Выдача оборудования</div>
+                            <div class="card-desc">Новый ПК, ноутбук, монитор, периферия сотруднику</div>
+                        </div>
+                    </div>
+                    <div class="service-card" data-request-type="equipment_return" data-title="Возврат оборудования">
+                        <div class="card-icon">↩️</div>
+                        <div class="card-content">
+                            <div class="card-title">Возврат оборудования</div>
+                            <div class="card-desc">Сдача техники при увольнении, замена или списание</div>
+                        </div>
+                    </div>
+                    <div class="service-card" data-request-type="equipment_transfer" data-title="Передача оборудования">
+                        <div class="card-icon">🔄</div>
+                        <div class="card-content">
+                            <div class="card-title">Передача оборудования</div>
+                            <div class="card-desc">Между сотрудниками, перераспределение техники</div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="service-card" data-request-type="equipment_transfer" data-title="Передача оборудования">
-                <div class="card-icon">🔄</div>
-                <div class="card-content">
-                    <div class="card-title">Передача оборудования</div>
-                    <div class="card-desc">Между сотрудниками, перераспределение техники</div>
+            </section>
+
+            <!-- 3. HR-раздел -->
+            <section class="section-group" id="section-hr" data-section-id="section-hr">
+                <div class="group-title"><span>👥</span> <span>HR и кадровые изменения</span></div>
+                <div class="cards-grid">
+                    <div class="service-card" data-request-type="hr_new" data-title="Новый сотрудник">
+                        <div class="card-icon">🌟</div>
+                        <div class="card-content">
+                            <div class="card-title">Новый сотрудник</div>
+                            <div class="card-desc">Оформление рабочего места, учётная запись, доступы, пропуск</div>
+                        </div>
+                    </div>
+                    <div class="service-card" data-request-type="hr_dismiss" data-title="Увольнение сотрудника">
+                        <div class="card-icon">🚪</div>
+                        <div class="card-content">
+                            <div class="card-title">Увольнение сотрудника</div>
+                            <div class="card-desc">Блокировка учётной записи, приём оборудования, отзыв доступов</div>
+                        </div>
+                    </div>
+                    <div class="service-card" data-request-type="hr_change" data-title="Изменение сотрудника">
+                        <div class="card-icon">✏️</div>
+                        <div class="card-content">
+                            <div class="card-title">Изменение сотрудника</div>
+                            <div class="card-desc">Смена должности, отдела, ФИО, прав доступа</div>
+                        </div>
+                    </div>
+                    <div class="service-card" data-request-type="org_structure" data-title="Изменение орг. структуры">
+                        <div class="card-icon">🏛️</div>
+                        <div class="card-content">
+                            <div class="card-title">Изменение орг. структуры</div>
+                            <div class="card-desc">Создание/переименование отделов, подразделений в сервисах</div>
+                        </div>
+                    </div>
                 </div>
+            </section>
+
+            <!-- 4. Серверное / сетевое оборудование -->
+            <section class="section-group" id="section-servers" data-section-id="section-servers">
+                <div class="group-title"><span>🌐</span> <span>Серверное и сетевое оборудование</span></div>
+                <div class="cards-grid">
+                    <div class="service-card" data-request-type="vm_create" data-title="Создание ВМ">
+                        <div class="card-icon">☁️</div>
+                        <div class="card-content">
+                            <div class="card-title">Создание ВМ</div>
+                            <div class="card-desc">Виртуальная машина под задачи, выделение ресурсов</div>
+                        </div>
+                    </div>
+                    <div class="service-card" data-request-type="network_access" data-title="Предоставление сетевого доступа">
+                        <div class="card-icon">📡</div>
+                        <div class="card-content">
+                            <div class="card-title">Предоставление сетевого доступа</div>
+                            <div class="card-desc">Настройка VPN, открытие портов, доступ к VLAN</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. СКУД / Видеонаблюдение -->
+            <section class="section-group" id="section-skud" data-section-id="section-skud">
+                <div class="group-title"><span>📹</span> <span>СКУД и видеонаблюдение</span></div>
+                <div class="cards-grid">
+                    <div class="service-card" data-request-type="skud_access" data-title="Предоставление доступа (СКУД)">
+                        <div class="card-icon">🔑</div>
+                        <div class="card-content">
+                            <div class="card-title">Предоставление доступа (СКУД)</div>
+                            <div class="card-desc">Выдача/настройка пропусков, турникеты, электронные замки</div>
+                        </div>
+                    </div>
+                    <div class="service-card" data-request-type="skud_repair" data-title="Ремонт СКУД">
+                        <div class="card-icon">🛠️</div>
+                        <div class="card-content">
+                            <div class="card-title">Ремонт СКУД</div>
+                            <div class="card-desc">Неисправность турникетов, считывателей, контроллеров</div>
+                        </div>
+                    </div>
+                    <div class="service-card" data-request-type="camera_install" data-title="Установка видеонаблюдения">
+                        <div class="card-icon">🎥</div>
+                        <div class="card-content">
+                            <div class="card-title">Установка видеонаблюдения</div>
+                            <div class="card-desc">Монтаж камер, настройка записи, дооснащение</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. Принтеры -->
+            <section class="section-group" id="section-printers" data-section-id="section-printers">
+                <div class="group-title"><span>🖨️</span> <span>Принтеры и МФУ</span></div>
+                <div class="cards-grid">
+                    <div class="service-card" data-request-type="printer_setup" data-title="Программная настройка принтера">
+                        <div class="card-icon">⚙️</div>
+                        <div class="card-content">
+                            <div class="card-title">Программная настройка принтера</div>
+                            <div class="card-desc">Добавление принтера, драйверы, настройка печати по сети</div>
+                        </div>
+                    </div>
+                    <div class="service-card" data-request-type="printer_repair" data-title="Ремонт и обслуживание принтера">
+                        <div class="card-icon">🔧</div>
+                        <div class="card-content">
+                            <div class="card-title">Ремонт и обслуживание принтера</div>
+                            <div class="card-desc">Заправка картриджей, замена узлов, чистка, ремонт</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. Другие вопросы -->
+            <section class="section-group" id="section-other" data-section-id="section-other">
+                <div class="group-title"><span>📌</span> <span>Другие вопросы</span></div>
+                <div class="cards-grid">
+                    <div class="service-card" data-request-type="other_noform" data-title="Без формы (другой запрос)">
+                        <div class="card-icon">📄</div>
+                        <div class="card-content">
+                            <div class="card-title">Без формы — другой запрос</div>
+                            <div class="card-desc">Если ни один вариант не подходит, свободное описание</div>
+                        </div>
+                    </div>
+                    <div class="service-card" data-request-type="universal_it" data-title="Обращение в ИТ">
+                        <div class="card-icon">🎫</div>
+                        <div class="card-content">
+                            <div class="card-title">Обращение в ИТ (универсальное)</div>
+                            <div class="card-desc">Любая ИТ-услуга или вопрос, не вошедший в категории</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 8. Полезное -->
+            <section class="section-group" id="usefulSection" data-section-id="usefulSection">
+                <div class="group-title"><span>🎯</span> <span>Полезное</span></div>
+                <div class="cards-grid">
+                    <div class="service-card useful-card" data-useful="cmdb">
+                        <div class="card-icon">📋</div>
+                        <div class="card-content">
+                            <div class="card-title">Узнать, какое оборудование за мной числится</div>
+                            <div class="card-desc">CMDB: инвентарный учёт, закреплённая техника</div>
+                        </div>
+                    </div>
+                    <div class="service-card useful-card" data-useful="phonebook">
+                        <div class="card-icon">📞</div>
+                        <div class="card-content">
+                            <div class="card-title">Справочник телефонов компании</div>
+                            <div class="card-desc">Контакты сотрудников и отделов</div>
+                        </div>
+                    </div>
+                    <div class="service-card useful-card" data-useful="knowledge">
+                        <div class="card-icon">📚</div>
+                        <div class="card-content">
+                            <div class="card-title">База знаний (IT-портал)</div>
+                            <div class="card-desc">Инструкции, руководства, частые решения</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="footer-note" id="pageFooter">
+                ⚡ Нажмите на карточку заявки — откроется форма для создания задачи в Яндекс Трекере.<br>
+                Раздел «Полезное» содержит внешние ссылки на CMDB, справочник и базу знаний.
             </div>
         </div>
-    </div>
-
-    <!-- 3. HR-раздел: Новый сотрудник, увольнение, изменение, оргструктура -->
-    <div class="section-group">
-        <div class="group-title"><span>👥</span> <span>HR и кадровые изменения</span></div>
-        <div class="cards-grid">
-            <div class="service-card" data-request-type="hr_new" data-title="Новый сотрудник">
-                <div class="card-icon">🌟</div>
-                <div class="card-content">
-                    <div class="card-title">Новый сотрудник</div>
-                    <div class="card-desc">Оформление рабочего места, учётная запись, доступы, пропуск</div>
-                </div>
-            </div>
-            <div class="service-card" data-request-type="hr_dismiss" data-title="Увольнение сотрудника">
-                <div class="card-icon">🚪</div>
-                <div class="card-content">
-                    <div class="card-title">Увольнение сотрудника</div>
-                    <div class="card-desc">Блокировка учётной записи, приём оборудования, отзыв доступов</div>
-                </div>
-            </div>
-            <div class="service-card" data-request-type="hr_change" data-title="Изменение сотрудника">
-                <div class="card-icon">✏️</div>
-                <div class="card-content">
-                    <div class="card-title">Изменение сотрудника</div>
-                    <div class="card-desc">Смена должности, отдела, ФИО, прав доступа</div>
-                </div>
-            </div>
-            <div class="service-card" data-request-type="org_structure" data-title="Изменение орг. структуры">
-                <div class="card-icon">🏛️</div>
-                <div class="card-content">
-                    <div class="card-title">Изменение орг. структуры</div>
-                    <div class="card-desc">Создание/переименование отделов, подразделений в сервисах</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 4. Серверное / сетевое оборудование + ВМ и доступ -->
-    <div class="section-group">
-        <div class="group-title"><span>🌐</span> <span>Серверное и сетевое оборудование</span></div>
-        <div class="cards-grid">
-            <div class="service-card" data-request-type="vm_create" data-title="Создание ВМ">
-                <div class="card-icon">☁️</div>
-                <div class="card-content">
-                    <div class="card-title">Создание ВМ</div>
-                    <div class="card-desc">Виртуальная машина под задачи, выделение ресурсов</div>
-                </div>
-            </div>
-            <div class="service-card" data-request-type="network_access" data-title="Предоставление сетевого доступа">
-                <div class="card-icon">📡</div>
-                <div class="card-content">
-                    <div class="card-title">Предоставление сетевого доступа</div>
-                    <div class="card-desc">Настройка VPN, открытие портов, доступ к VLAN</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 5. СКУД / Видеонаблюдение (доступ, ремонт, установка) -->
-    <div class="section-group">
-        <div class="group-title"><span>📹</span> <span>СКУД и видеонаблюдение</span></div>
-        <div class="cards-grid">
-            <div class="service-card" data-request-type="skud_access" data-title="Предоставление доступа (СКУД)">
-                <div class="card-icon">🔑</div>
-                <div class="card-content">
-                    <div class="card-title">Предоставление доступа (СКУД)</div>
-                    <div class="card-desc">Выдача/настройка пропусков, турникеты, электронные замки</div>
-                </div>
-            </div>
-            <div class="service-card" data-request-type="skud_repair" data-title="Ремонт СКУД">
-                <div class="card-icon">🛠️</div>
-                <div class="card-content">
-                    <div class="card-title">Ремонт СКУД</div>
-                    <div class="card-desc">Неисправность турникетов, считывателей, контроллеров</div>
-                </div>
-            </div>
-            <div class="service-card" data-request-type="camera_install" data-title="Установка видеонаблюдения">
-                <div class="card-icon">🎥</div>
-                <div class="card-content">
-                    <div class="card-title">Установка видеонаблюдения</div>
-                    <div class="card-desc">Монтаж камер, настройка записи, дооснащение</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 6. Принтеры (программная настройка и ремонт/обслуживание) -->
-    <div class="section-group">
-        <div class="group-title"><span>🖨️</span> <span>Принтеры и МФУ</span></div>
-        <div class="cards-grid">
-            <div class="service-card" data-request-type="printer_setup" data-title="Программная настройка принтера">
-                <div class="card-icon">⚙️</div>
-                <div class="card-content">
-                    <div class="card-title">Программная настройка принтера</div>
-                    <div class="card-desc">Добавление принтера, драйверы, настройка печати по сети</div>
-                </div>
-            </div>
-            <div class="service-card" data-request-type="printer_repair" data-title="Ремонт и обслуживание принтера">
-                <div class="card-icon">🔧</div>
-                <div class="card-content">
-                    <div class="card-title">Ремонт и обслуживание принтера</div>
-                    <div class="card-desc">Заправка картриджей, замена узлов, чистка, ремонт</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 7. Другие вопросы (оставляем как есть) -->
-    <div class="section-group">
-        <div class="group-title"><span>📌</span> <span>Другие вопросы</span></div>
-        <div class="cards-grid">
-            <div class="service-card" data-request-type="other_noform" data-title="Без формы (другой запрос)">
-                <div class="card-icon">📄</div>
-                <div class="card-content">
-                    <div class="card-title">Без формы — другой запрос</div>
-                    <div class="card-desc">Если ни один вариант не подходит, свободное описание</div>
-                </div>
-            </div>
-            <div class="service-card" data-request-type="universal_it" data-title="Обращение в ИТ">
-                <div class="card-icon">🎫</div>
-                <div class="card-content">
-                    <div class="card-title">Обращение в ИТ (универсальное)</div>
-                    <div class="card-desc">Любая ИТ-услуга или вопрос, не вошедший в категории</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 8. ПОЛЕЗНОЕ (смдб, справочник телефонов, база знаний) -->
-    <div class="section-group">
-        <div class="group-title"><span>🎯</span> <span>Полезное</span></div>
-        <div class="cards-grid">
-            <div class="service-card useful-card" data-useful="cmdb" data-link="#">
-                <div class="card-icon">📋</div>
-                <div class="card-content">
-                    <div class="card-title">Узнать, какое оборудование за мной числится</div>
-                    <div class="card-desc">CMDB: инвентарный учёт, закреплённая техника</div>
-                </div>
-            </div>
-            <div class="service-card useful-card" data-useful="phonebook" data-link="#">
-                <div class="card-icon">📞</div>
-                <div class="card-content">
-                    <div class="card-title">Справочник телефонов компании</div>
-                    <div class="card-desc">Контакты сотрудников и отделов</div>
-                </div>
-            </div>
-            <div class="service-card useful-card" data-useful="knowledge" data-link="#">
-                <div class="card-icon">📚</div>
-                <div class="card-content">
-                    <div class="card-title">База знаний (IT-портал)</div>
-                    <div class="card-desc">Инструкции, руководства, частые решения</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="footer-note" id="pageFooter">
-        ⚡ Нажмите на карточку заявки — откроется форма для создания задачи в Яндекс Трекере.<br>
-        Раздел «Полезное» содержит внешние ссылки на CMDB, справочник и базу знаний.
-    </div>
+    </main>
 </div>
 
 <!-- Модальное окно для создания задач -->
-<div id="taskModal" class="modal-overlay">
-    <div class="modal">
+<div id="taskModal" class="modal-overlay" role="presentation" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc" tabindex="-1">
         <h3 id="modalTitle">Создание заявки</h3>
         <p id="modalDesc">Заполните данные — задача попадёт в очередь Яндекс Трекера.</p>
-        <form id="dynamicForm">
-        <div class="form-group"><label>ФИО *</label><input type="text" id="fio" required></div>
-
-    <div class="form-group">
-    <label>Краткое описание *</label>
-    <input type="text" id="summary" required>
+        <form id="dynamicForm" novalidate>
+            <div class="form-group">
+                <label for="fio">ФИО *</label>
+                <input type="text" id="fio" name="fio" required autocomplete="name">
+            </div>
+            <div class="form-group">
+                <label for="summary">Краткое описание *</label>
+                <input type="text" id="summary" name="summary" required>
+            </div>
+            <div class="form-group">
+                <label for="subcategorySelect">Тип / Подкатегория</label>
+                <select id="subcategorySelect" name="subcategory"></select>
+            </div>
+            <div id="conditionalFields"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="closeModalBtn">Отмена</button>
+                <button type="submit" class="btn-primary" id="submitTaskBtn">Создать задачу в Трекере</button>
+            </div>
+        </form>
     </div>
-
-    <div class="form-group">
-    <label>Тип / Подкатегория</label>
-    <select id="subcategorySelect"></select>
-    </div>
-
-    <div id="conditionalFields"></div>
-
-<div class="modal-actions">
-<button type="button" class="btn-secondary" id="closeModalBtn">Отмена</button>
-<button type="submit" class="btn-primary">Создать задачу в Трекере</button>
 </div>
-</form>
+
+<!-- Модальное окно для сброса пароля -->
+<div id="pwResetModal" class="modal-overlay" role="presentation" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pwModalTitle" aria-describedby="pwModalDesc" tabindex="-1">
+        <h3 id="pwModalTitle">Сброс пароля</h3>
+        <p id="pwModalDesc">Заполните данные для запроса сброса пароля.</p>
+        <form id="pwResetForm" novalidate>
+            <div class="form-group">
+                <label for="targetFio">ФИО, кому сбросить пароль *</label>
+                <input type="text" id="targetFio" name="targetFio" required autocomplete="name">
+            </div>
+            <div class="form-group">
+                <label for="requesterFio">ФИО, кто запрашивает сброс *</label>
+                <input type="text" id="requesterFio" name="requesterFio" required autocomplete="name">
+            </div>
+            <div class="form-group">
+                <label for="resetReason">Причина — детальное описание *</label>
+                <textarea id="resetReason" name="resetReason" rows="5" maxlength="1000" required></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="closePwModal">Отмена</button>
+                <button type="submit" class="btn-primary">Отправить запрос</button>
+            </div>
+        </form>
     </div>
 </div>
 
-
+<script src="js/config.js"></script>
 <script src="js/modal.js"></script>
-<script src="js/cards.js"></script>
 <script src="js/form.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/cards.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
