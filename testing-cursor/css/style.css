@@ -696,6 +696,13 @@ a {
     transform: translateY(-1px);
 }
 
+.btn-primary:disabled,
+.btn-primary[aria-busy="true"] {
+    opacity: 0.72;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .btn-primary:focus-visible {
     outline: none;
     box-shadow: var(--focus-outline), 0 8px 20px rgba(255, 31, 122, 0.2);
