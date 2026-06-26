@@ -7,6 +7,7 @@
     <title>ИТ-портал | Заявки и полезные сервисы</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="assets/favicon.svg">
+    <script src="js/portal-search-hotkey.js"></script>
     <script src="js/portal-theme-init.js"></script>
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/utilities.css">
@@ -19,23 +20,6 @@
     <link rel="stylesheet" href="css/scrollbars.css">
     <link rel="stylesheet" href="css/modal.css">
     <link rel="stylesheet" href="css/mobile.css">
-    <script>
-        (function () {
-            function isPortalModalOpen() {
-                return Boolean(document.querySelector('.modal-overlay.active'));
-            }
-
-            window.addEventListener('keydown', function (event) {
-                if (isPortalModalOpen()) return;
-                const isFindHotkey = (event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === 'f';
-                if (!isFindHotkey) return;
-                event.preventDefault();
-                event.stopPropagation();
-                if (event.stopImmediatePropagation) event.stopImmediatePropagation();
-                window.dispatchEvent(new CustomEvent('portal:focus-search'));
-            }, true);
-        })();
-    </script>
 </head>
 <body>
 <a class="skip-link" href="#section-support">Перейти к содержимому</a>
@@ -55,8 +39,8 @@
                         <div class="header-links__primary">
                             <a class="header-link-btn" data-portal-link="wiki" href="https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/" target="_blank" rel="noopener noreferrer">WIKI</a>
                             <a class="header-link-btn" data-portal-link="learning" href="https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/" target="_blank" rel="noopener noreferrer">Обучение</a>
-                            <button type="button" class="header-link-btn header-link-btn--coming-soon" disabled title="Раздел в разработке">FAQ <span class="header-link-btn__badge">скоро</span></button>
-                            <button type="button" class="header-link-btn header-link-btn--coming-soon" disabled title="Раздел в разработке">Регламенты <span class="header-link-btn__badge">скоро</span></button>
+                            <span class="header-link-btn header-link-btn--placeholder" aria-disabled="true">FAQ</span>
+                            <span class="header-link-btn header-link-btn--placeholder" aria-disabled="true">Регламенты</span>
                         </div>
                         <button id="resetPasswordBtn" class="header-link-btn header-link-btn--reset" type="button">Сбросить пароль</button>
                     </div>

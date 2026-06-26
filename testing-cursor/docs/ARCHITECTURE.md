@@ -4,7 +4,7 @@
 
 ## Порядок скриптов
 
-**`<head>`:** `portal-theme-init.js` (до CSS, против FOUC)
+**`<head>` (до CSS):** `portal-search-hotkey.js`, `portal-theme-init.js`
 
 **Конец `<body>`:**
 ```

@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const desktopMedia = window.matchMedia('(min-width: 768px)');
         const isMac = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '');
         if (desktopMedia.matches) {
-            searchInput.placeholder = isMac ? 'Поиск… (⌘F)' : 'Поиск… (Ctrl+F)';
+            searchInput.placeholder = isMac ? 'Поиск… (⌘F или /)' : 'Поиск… (Ctrl+F или /)';
         } else {
             searchInput.placeholder = 'Поиск...';
         }
