@@ -83,6 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
         netFolderCounter = 0;
         setModalButtonsForStep(1);
         clearError(dynamicForm);
+        window.PortalTracker?.setButtonLoading(submitBtn, false);
+        window.PortalTracker?.releaseTaskSubmitLock();
     }
 
     function closeTaskModal() {
@@ -325,7 +327,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
-    function submitTask() {
+    async function submitTask() {
+        const tracker = window.PortalTracker;
+        if (tracker?.isTaskSubmitLocked()) return;
+
         const summaryVal = summaryInput.value.trim();
         const subcat = subcategorySelect.value;
         const fioVal = document.getElementById('fio')?.value.trim() || '';
@@ -345,17 +350,37 @@ document.addEventListener('DOMContentLoaded', () => {
             requestType: currentRequestKey
         };
 
-        console.log('Яндекс Трекер: подготовлена задача', taskPayload);
+        tracker?.setButtonLoading(submitBtn, true, 'Отправка…');
+        tracker?.lockTaskSubmit();
 
-        if (demoMode) {
-            showNotice(dynamicForm, 'Демо-режим: заявка подготовлена, данные в консоли браузера (F12). Окно закроется автоматически.');
-        } else {
-            clearError(dynamicForm);
+        try {
+            const result = await tracker.submitToTracker(taskPayload);
+
+            if (result.demo) {
+                showNotice(dynamicForm, 'Демо-режим: заявка подготовлена, данные в консоли браузера (F12). Окно закроется автоматически.');
+                window.setTimeout(closeTaskModal, 2500);
+                return;
+            }
+
+            const message = tracker.buildIssueSuccessMessage(result.data);
+            showNotice(dynamicForm, message);
+            document.dispatchEvent(new CustomEvent('portal:task-submitted', {
+                detail: {
+                    issueKey: result.data?.issueKey || result.data?.key,
+                    requestType: currentRequestKey
+                }
+            }));
+            window.setTimeout(closeTaskModal, 3000);
+        } catch (error) {
+            const message = error?.message || 'Не удалось отправить заявку. Попробуйте позже.';
+            showError(dynamicForm, message);
+            document.dispatchEvent(new CustomEvent('portal:task-failed', {
+                detail: { error: message, requestType: currentRequestKey }
+            }));
+            tracker?.releaseTaskSubmitLock();
+        } finally {
+            tracker?.setButtonLoading(submitBtn, false);
         }
-
-        setTimeout(() => {
-            closeTaskModal();
-        }, demoMode ? 2500 : 0);
     }
 
     function openTaskModal(requestKey) {
@@ -537,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupModal(modalOverlay, { onClose: resetTaskModalState, onCloseButtonClick: handleCancelClick });
     cancelBtn.addEventListener('click', handleCancelClick);
 
-    dynamicForm.addEventListener('submit', (e) => {
+    dynamicForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         clearError(dynamicForm);
 
@@ -554,16 +579,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        submitTask();
+        await submitTask();
     });
 
     const resetBtn = document.getElementById('resetPasswordBtn');
     const pwModal = document.getElementById('pwResetModal');
     const pwForm = document.getElementById('pwResetForm');
+    const pwSubmitBtn = document.getElementById('submitPwResetBtn');
 
     function resetPwModalState() {
         pwForm?.reset();
         clearError(pwForm);
+        window.PortalTracker?.setButtonLoading(pwSubmitBtn, false);
+        window.PortalTracker?.releaseResetSubmitLock();
     }
 
     function closePwModal() {
@@ -583,9 +611,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (pwForm) {
-        pwForm.addEventListener('submit', (e) => {
+        pwForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             clearError(pwForm);
+
+            const tracker = window.PortalTracker;
+            if (tracker?.isResetSubmitLocked()) return;
 
             const target = document.getElementById('targetFio')?.value.trim();
             const requester = document.getElementById('requesterFio')?.value.trim();
@@ -600,13 +631,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const payload = { target, requester, reason, source: 'web-reset' };
-            console.log('Password reset request', payload);
 
-            if (demoMode) {
-                showNotice(pwForm, 'Демо-режим: запрос подготовлен, данные в консоли (F12). Окно закроется автоматически.');
-                setTimeout(closePwModal, 2500);
-            } else {
-                closePwModal();
+            tracker?.setButtonLoading(pwSubmitBtn, true, 'Отправка…');
+            tracker?.lockResetSubmit();
+
+            try {
+                const result = await tracker.submitPasswordReset(payload);
+
+                if (result.demo) {
+                    showNotice(pwForm, 'Демо-режим: запрос подготовлен, данные в консоли (F12). Окно закроется автоматически.');
+                    window.setTimeout(closePwModal, 2500);
+                    return;
+                }
+
+                showNotice(pwForm, 'Запрос на сброс пароля отправлен.');
+                window.setTimeout(closePwModal, 2500);
+            } catch (error) {
+                const message = error?.message || 'Не удалось отправить запрос. Попробуйте позже.';
+                showError(pwForm, message);
+                tracker?.releaseResetSubmitLock();
+            } finally {
+                tracker?.setButtonLoading(pwSubmitBtn, false);
             }
         });
     }

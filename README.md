@@ -108,12 +108,10 @@ node scripts/build-search-index.mjs
 
 ## Настройка под вашу среду
 
-Через конфигурационный файл можно изменить:
+Через конфигурационные файлы можно изменить:
 
-- названия и состав разделов навигации;
-- URL полезных ссылок и внешних ресурсов (Wiki, SMDB, справочник);
-- очередь Трекера и список двухшаговых форм;
-- тему по умолчанию и демо-режим.
+- **Базовый конфиг** — [js/config.js](js/config.js): разделы, очередь Трекера, demo-режим, endpoint'ы API.
+- **Переопределения среды** — [js/config.local.js](js/config.local.js) (шаблон: [js/config.local.example.js](js/config.local.example.js)): prod URL, `demoMode: false`, адреса CMDB и справочника.
 
 Через словарь поиска — ключевые слова, синонимы и привязку запросов к карточкам, чтобы сотрудники находили услуги привычными формулировками.
 
@@ -123,7 +121,7 @@ node scripts/build-search-index.mjs
 2. Описание формы в `data/request-types.json`.
 3. Пересборка: `node scripts/build-search-index.mjs`.
 
-Подробнее — в [docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md) (раздел ARCH-02).
+Подробнее — в [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 

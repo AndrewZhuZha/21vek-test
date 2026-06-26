@@ -28,5 +28,31 @@ window.PortalConfig = {
     themeStorageKey: 'portal-theme',
     themeTransitionMs: 140,
     defaultTheme: 'system',
-    demoMode: true
+    demoMode: true,
+    /** POST endpoint backend-прокси для создания задач в Трекере. */
+    trackerApiUrl: '/api/tracker/issues',
+    /** Endpoint сброса пароля; по умолчанию trackerApiUrl. */
+    trackerResetApiUrl: '/api/tracker/password-reset',
+    /** Шаблон ссылки на задачу после успеха. Плейсхолдер: {issueKey} */
+    trackerIssueUrlTemplate: 'https://tracker.yandex.ru/{issueKey}',
+    /** Блокировка повторной отправки после submit, мс. */
+    submitCooldownMs: 2500
 };
+
+(function mergeLocalPortalConfig() {
+    if (window.PortalConfigLocal && typeof window.PortalConfigLocal === 'object') {
+        Object.assign(window.PortalConfig, window.PortalConfigLocal);
+        if (window.PortalConfigLocal.usefulLinks) {
+            window.PortalConfig.usefulLinks = {
+                ...window.PortalConfig.usefulLinks,
+                ...window.PortalConfigLocal.usefulLinks
+            };
+        }
+        if (window.PortalConfigLocal.externalLinks) {
+            window.PortalConfig.externalLinks = {
+                ...window.PortalConfig.externalLinks,
+                ...window.PortalConfigLocal.externalLinks
+            };
+        }
+    }
+})();
