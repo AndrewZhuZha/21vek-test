@@ -1,71 +1,169 @@
 document.addEventListener('DOMContentLoaded', () => {
-    initScrollToTop();
-
     const config = window.PortalConfig || {};
     const sections = Array.isArray(config.sections) ? config.sections : [];
     const chipsRoot = document.getElementById('sectionNavChips');
-
-    if (!sections.length || !chipsRoot) return;
+    const reduceMotionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     const navRegistry = new Map();
     let activeSectionId = '';
-    let rafScheduled = false;
-    let navLockSectionId = '';
-    let navLockUntil = 0;
+    let stickyOffset = 94;
+    let sectionObserver = null;
+    let suppressScrollSpy = false;
+    let scrollIdleTimer = null;
+    let manualScrollRaf = false;
 
-    function createChip(section) {
-        const link = document.createElement('a');
-        link.className = 'section-nav__chip';
-        link.href = `#${section.id}`;
-        link.dataset.targetId = section.id;
-        link.innerHTML = `<span aria-hidden="true">${section.icon}</span><span>${section.label}</span>`;
-        return link;
+    function getScrollBehavior() {
+        return reduceMotionMedia.matches ? 'auto' : 'smooth';
     }
 
-    sections.forEach(section => {
-        const chip = createChip(section);
-        chipsRoot.appendChild(chip);
-        navRegistry.set(section.id, { chip });
-    });
-
-    function isStickyNav() {
+    function refreshStickyOffset() {
         const stickyNav = document.querySelector('.section-nav');
-        return stickyNav && window.getComputedStyle(stickyNav).position === 'sticky';
-    }
-
-    function getAnchorLineY() {
-        const stickyNav = document.querySelector('.section-nav');
-
-        if (!isStickyNav()) {
-            return Math.round(window.innerHeight * 0.24);
-        }
-
         if (!stickyNav) {
-            return Math.round(window.innerHeight * 0.24);
+            stickyOffset = 24;
+            return stickyOffset;
         }
 
-        const rect = stickyNav.getBoundingClientRect();
-        if (rect.bottom <= 0) {
-            return Math.round(window.innerHeight * 0.24);
+        const style = window.getComputedStyle(stickyNav);
+        if (style.position !== 'sticky') {
+            stickyOffset = 24;
+            return stickyOffset;
         }
 
-        return Math.round(rect.bottom + 6);
+        const stickyTop = parseFloat(style.top) || 0;
+        stickyOffset = Math.round(stickyNav.offsetHeight + stickyTop + 14);
+        return stickyOffset;
     }
 
-    function getStickyOffset() {
-        const stickyNav = document.querySelector('.section-nav');
-        if (!stickyNav) return 42;
-        if (!isStickyNav()) return 24;
-        const stickyTop = parseFloat(window.getComputedStyle(stickyNav).top) || 0;
-        return Math.round(stickyNav.offsetHeight + stickyTop + 14);
-    }
-
-    function getVisibleSections() {
+    function getVisibleSectionNodes() {
         return sections.map(section => {
             const node = document.getElementById(section.id);
             if (!node || node.classList.contains('is-hidden')) return null;
             return { id: section.id, node };
         }).filter(Boolean);
+    }
+
+    function getFirstVisibleSectionId() {
+        const visible = getVisibleSectionNodes();
+        return visible[0]?.id || '';
+    }
+
+    function getLastVisibleSectionId() {
+        const visible = getVisibleSectionNodes();
+        return visible[visible.length - 1]?.id || '';
+    }
+
+    function beginProgrammaticScroll() {
+        suppressScrollSpy = true;
+        document.documentElement.classList.add('is-programmatic-scroll');
+    }
+
+    function isScrollSpySuppressed() {
+        return suppressScrollSpy;
+    }
+
+    function isChipFullyVisible(chip) {
+        const chipLeft = chip.offsetLeft;
+        const chipRight = chipLeft + chip.offsetWidth;
+        const viewLeft = chipsRoot.scrollLeft;
+        const viewRight = viewLeft + chipsRoot.clientWidth;
+        return chipLeft >= viewLeft - 2 && chipRight <= viewRight + 2;
+    }
+
+    function scrollActiveChipIntoView(sectionId) {
+        const chip = navRegistry.get(sectionId)?.chip;
+        if (!chip || chip.hidden || isChipFullyVisible(chip)) return;
+
+        chipsRoot.scrollTo({
+            left: Math.max(0, chip.offsetLeft - 12),
+            behavior: 'auto'
+        });
+    }
+
+    function setActive(sectionId, { scrollChip = false } = {}) {
+        if (!sectionId || activeSectionId === sectionId) {
+            if (scrollChip) scrollActiveChipIntoView(sectionId);
+            return;
+        }
+
+        activeSectionId = sectionId;
+        navRegistry.forEach((nodes, id) => {
+            const active = id === sectionId;
+            nodes.chip.classList.toggle('is-active', active);
+            if (active) {
+                nodes.chip.setAttribute('aria-current', 'true');
+                if (scrollChip) scrollActiveChipIntoView(sectionId);
+            } else {
+                nodes.chip.removeAttribute('aria-current');
+            }
+        });
+    }
+
+    function resolveActiveSectionFromScroll() {
+        if (isScrollSpySuppressed()) return;
+
+        const visibleSections = getVisibleSectionNodes();
+        if (!visibleSections.length) return;
+
+        if (window.scrollY <= 8) {
+            setActive(getFirstVisibleSectionId());
+            return;
+        }
+
+        const pageHeight = document.documentElement.scrollHeight;
+        if (window.scrollY + window.innerHeight >= pageHeight - 2) {
+            setActive(getLastVisibleSectionId());
+            return;
+        }
+
+        const anchorY = refreshStickyOffset() + 8;
+        for (let i = 0; i < visibleSections.length; i += 1) {
+            const { id, node } = visibleSections[i];
+            const top = node.getBoundingClientRect().top;
+            const nextTop = visibleSections[i + 1]
+                ? visibleSections[i + 1].node.getBoundingClientRect().top
+                : Number.POSITIVE_INFINITY;
+
+            if (top <= anchorY && anchorY < nextTop) {
+                setActive(id);
+                return;
+            }
+        }
+    }
+
+    function setupSectionObserver() {
+        if (!window.IntersectionObserver) return;
+
+        if (sectionObserver) sectionObserver.disconnect();
+
+        refreshStickyOffset();
+        sectionObserver = new IntersectionObserver((entries) => {
+            if (isScrollSpySuppressed()) return;
+
+            const intersecting = entries.filter(entry => entry.isIntersecting);
+            if (!intersecting.length) return;
+
+            if (window.scrollY <= 8) {
+                setActive(getFirstVisibleSectionId());
+                return;
+            }
+
+            intersecting.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+            const anchorY = stickyOffset + 8;
+            const candidate = intersecting.find(entry => entry.boundingClientRect.top <= anchorY + 4)
+                || intersecting[0];
+
+            if (candidate?.target?.id) {
+                setActive(candidate.target.id);
+            }
+        }, {
+            root: null,
+            rootMargin: `-${stickyOffset + 8}px 0px -58% 0px`,
+            threshold: [0, 0.05, 0.15]
+        });
+
+        getVisibleSectionNodes().forEach(({ node }) => {
+            sectionObserver.observe(node);
+        });
     }
 
     function syncVisibility() {
@@ -75,142 +173,111 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!group || !nodes) return;
             nodes.chip.hidden = group.classList.contains('is-hidden');
         });
-    }
-
-    function isChipFullyVisible(chip) {
-        const container = chipsRoot;
-        const chipLeft = chip.offsetLeft;
-        const chipRight = chipLeft + chip.offsetWidth;
-        const viewLeft = container.scrollLeft;
-        const viewRight = viewLeft + container.clientWidth;
-        return chipLeft >= viewLeft - 2 && chipRight <= viewRight + 2;
-    }
-
-    function scrollActiveChipIntoView(sectionId, { smooth = false } = {}) {
-        const nodes = navRegistry.get(sectionId);
-        const chip = nodes?.chip;
-        if (!chip || chip.hidden) return;
-        if (isChipFullyVisible(chip)) return;
-
-        chip.scrollIntoView({
-            block: 'nearest',
-            inline: 'nearest',
-            behavior: smooth ? 'smooth' : 'auto'
-        });
-    }
-
-    function setActive(sectionId, { scrollChip = false, smoothChip = false } = {}) {
-        if (!sectionId || activeSectionId === sectionId) return;
-        activeSectionId = sectionId;
-        navRegistry.forEach((nodes, id) => {
-            const active = id === sectionId;
-            nodes.chip.classList.toggle('is-active', active);
-            if (active) {
-                nodes.chip.setAttribute('aria-current', 'true');
-                if (scrollChip) {
-                    scrollActiveChipIntoView(sectionId, { smooth: smoothChip });
-                }
-            } else {
-                nodes.chip.removeAttribute('aria-current');
-            }
-        });
-    }
-
-    function getCurrentSectionId() {
-        const visibleSections = getVisibleSections();
-        if (!visibleSections.length) return null;
-
-        const pageHeight = document.documentElement.scrollHeight;
-        const scrollBottom = window.scrollY + window.innerHeight;
-
-        if (scrollBottom >= pageHeight - 2) {
-            return visibleSections[visibleSections.length - 1].id;
-        }
-
-        if (window.scrollY <= 8) {
-            return visibleSections[0].id;
-        }
-
-        const anchorY = getAnchorLineY();
-
-        for (let i = 0; i < visibleSections.length; i += 1) {
-            const { id, node } = visibleSections[i];
-            const top = node.getBoundingClientRect().top;
-            const nextSection = visibleSections[i + 1];
-            const nextTop = nextSection
-                ? nextSection.node.getBoundingClientRect().top
-                : Number.POSITIVE_INFINITY;
-
-            if (top <= anchorY && anchorY < nextTop) {
-                return id;
-            }
-        }
-
-        const firstTop = visibleSections[0].node.getBoundingClientRect().top;
-        if (firstTop > anchorY) {
-            return visibleSections[0].id;
-        }
-
-        return visibleSections[visibleSections.length - 1].id;
+        setupSectionObserver();
     }
 
     function navigateToSection(sectionId) {
         const target = document.getElementById(sectionId);
         if (!target) return;
-        const top = window.scrollY + target.getBoundingClientRect().top - getStickyOffset();
-        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+
+        beginProgrammaticScroll();
+        setActive(sectionId, { scrollChip: true });
+
+        const top = window.scrollY + target.getBoundingClientRect().top - refreshStickyOffset();
+        window.scrollTo({
+            top: Math.max(0, top),
+            behavior: getScrollBehavior()
+        });
     }
 
-    function lockActiveSection(sectionId) {
-        navLockSectionId = sectionId;
-        navLockUntil = performance.now() + 700;
-        setActive(sectionId, { scrollChip: true, smoothChip: true });
+    function scrollToTop() {
+        beginProgrammaticScroll();
+        setActive(getFirstVisibleSectionId());
+
+        window.scrollTo({
+            top: 0,
+            behavior: getScrollBehavior()
+        });
     }
 
-    function scheduleActiveUpdate() {
-        if (rafScheduled) return;
-        rafScheduled = true;
+    function onManualScroll() {
+        if (suppressScrollSpy || sectionObserver) return;
+        if (manualScrollRaf) return;
+        manualScrollRaf = true;
         requestAnimationFrame(() => {
-            rafScheduled = false;
-            if (navLockSectionId && performance.now() < navLockUntil) {
-                setActive(navLockSectionId, { scrollChip: true, smoothChip: false });
-                return;
-            }
-            navLockSectionId = '';
-            const nextId = getCurrentSectionId();
-            if (nextId) {
-                setActive(nextId, { scrollChip: isStickyNav(), smoothChip: false });
-            }
+            manualScrollRaf = false;
+            resolveActiveSectionFromScroll();
         });
     }
 
-    syncVisibility();
-    scheduleActiveUpdate();
+    function onScrollSettled() {
+        suppressScrollSpy = false;
+        document.documentElement.classList.remove('is-programmatic-scroll');
+        resolveActiveSectionFromScroll();
+    }
 
-    navRegistry.forEach(({ chip }) => {
-        chip.addEventListener('click', (e) => {
-            e.preventDefault();
-            const targetId = chip.dataset.targetId;
-            if (!targetId) return;
-            lockActiveSection(targetId);
-            navigateToSection(targetId);
-            scheduleActiveUpdate();
+    function scheduleScrollSettled() {
+        if (!suppressScrollSpy) return;
+        if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
+        scrollIdleTimer = window.setTimeout(onScrollSettled, 120);
+    }
+
+    if (sections.length && chipsRoot) {
+        sections.forEach(section => {
+            const chip = document.createElement('a');
+            chip.className = 'section-nav__chip';
+            chip.href = `#${section.id}`;
+            chip.dataset.targetId = section.id;
+            chip.innerHTML = `<span aria-hidden="true">${section.icon}</span><span>${section.label}</span>`;
+            chipsRoot.appendChild(chip);
+            navRegistry.set(section.id, { chip });
         });
-    });
 
-    window.addEventListener('scroll', scheduleActiveUpdate, { passive: true });
-    window.addEventListener('resize', scheduleActiveUpdate);
-    document.addEventListener('portal:filter-changed', () => {
         syncVisibility();
-        scheduleActiveUpdate();
-    });
+        resolveActiveSectionFromScroll();
+
+        navRegistry.forEach(({ chip }) => {
+            chip.addEventListener('click', (event) => {
+                event.preventDefault();
+                const targetId = chip.dataset.targetId;
+                if (!targetId) return;
+                navigateToSection(targetId);
+            });
+        });
+
+        document.addEventListener('portal:filter-changed', syncVisibility);
+
+        window.addEventListener('scroll', () => {
+            scheduleScrollSettled();
+            onManualScroll();
+        }, { passive: true });
+
+        if ('onscrollend' in window) {
+            window.addEventListener('scrollend', onScrollSettled, { passive: true });
+        }
+
+        window.addEventListener('resize', () => {
+            refreshStickyOffset();
+            setupSectionObserver();
+            resolveActiveSectionFromScroll();
+        });
+
+        document.addEventListener('portal:scroll-to-top', scrollToTop);
+
+        window.PortalNav = {
+            scrollToTop,
+            setActive,
+            refreshStickyOffset
+        };
+    }
+
+    initScrollToTop(scrollToTop);
 });
 
-function initScrollToTop() {
+function initScrollToTop(scrollToTopHandler) {
     const button = document.getElementById('scrollToTopBtn');
     if (!button) return;
 
-    const reduceMotionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
     let rafScheduled = false;
 
     function isModalOpen() {
@@ -233,9 +300,14 @@ function initScrollToTop() {
     }
 
     button.addEventListener('click', () => {
+        if (typeof scrollToTopHandler === 'function') {
+            scrollToTopHandler();
+            return;
+        }
+
         window.scrollTo({
             top: 0,
-            behavior: reduceMotionMedia.matches ? 'auto' : 'smooth'
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
         });
     });
 

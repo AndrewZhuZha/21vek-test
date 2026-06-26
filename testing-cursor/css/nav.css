@@ -63,13 +63,16 @@
 .section-nav__chip:hover {
     transform: translateY(-0.5px);
     box-shadow: var(--shadow-soft);
-    will-change: transform;
 }
 
 .section-nav__chip.is-active {
     color: var(--nav-chip-active-text);
     background: var(--nav-chip-active-bg);
     border-color: transparent;
+}
+
+html.is-programmatic-scroll .section-nav__chip {
+    transition: none;
 }
 
 .theme-toggle {
@@ -104,7 +107,6 @@
 .theme-toggle:hover {
     transform: translateY(-1px);
     box-shadow: var(--shadow-soft);
-    will-change: transform;
 }
 
 .theme-toggle__icon {
