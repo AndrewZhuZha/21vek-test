@@ -164,37 +164,38 @@ a {
     transition: color 0.12s ease;
 }
 
-.header-link-btn:hover {
+.header-link-btn:not(.header-link-btn--placeholder):hover {
     color: var(--accent-deep);
 }
 
 .header-link-btn--placeholder {
     color: color-mix(in srgb, var(--text-muted) 72%, transparent);
     cursor: default;
+    white-space: nowrap;
 }
 
 .header-link-btn--placeholder:hover,
 .header-link-btn--placeholder:focus-visible {
-    color: color-mix(in srgb, var(--text-muted) 88%, var(--text-primary));
+    color: color-mix(in srgb, var(--text-muted) 72%, transparent);
 }
 
-.header-link-btn--placeholder:hover::after,
-.header-link-btn--placeholder:focus-visible::after {
-    content: " — в разработке";
+.header-link-btn__hint {
+    display: none;
     font-weight: 500;
     font-size: 0.68rem;
     color: var(--text-muted);
-    white-space: nowrap;
+}
+
+.header-link-btn--placeholder:hover .header-link-btn__hint,
+.header-link-btn--placeholder:focus-visible .header-link-btn__hint {
+    display: inline;
 }
 
 @supports not (color: color-mix(in srgb, red 50%, blue)) {
-    .header-link-btn--placeholder {
-        color: rgba(107, 114, 128, 0.78);
-    }
-
+    .header-link-btn--placeholder,
     .header-link-btn--placeholder:hover,
     .header-link-btn--placeholder:focus-visible {
-        color: var(--text-muted);
+        color: rgba(107, 114, 128, 0.78);
     }
 }
 
