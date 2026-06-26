@@ -246,7 +246,13 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.blur();
         setThinkingState(false);
         filterCards();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        if (window.PortalNav?.scrollToTop) {
+            window.PortalNav.scrollToTop();
+            return;
+        }
+
+        document.dispatchEvent(new CustomEvent('portal:scroll-to-top'));
     }
 
     function focusSearchWithHotkey() {
