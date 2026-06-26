@@ -40,7 +40,8 @@ window.PortalTourSteps = [
         selector: '#scrollToTopBtn',
         title: 'Кнопка «Наверх»',
         text: 'Появляется при прокрутке вниз — быстро вернёт к началу страницы.',
-        placement: 'top-left',
+        placement: 'top',
+        skipScrollIntoView: true,
         prepare: function () {
             window.scrollTo({ top: 400, behavior: 'auto' });
             const btn = document.getElementById('scrollToTopBtn');

@@ -19,10 +19,18 @@
 }
 
 .portal-tour-target {
-    position: relative;
     z-index: 10101;
     outline: 2px solid var(--accent-pink-start);
     outline-offset: 3px;
+}
+
+/* position: relative ломает position: fixed у кнопки «Наверх» */
+.portal-tour-target:not(.scroll-to-top) {
+    position: relative;
+}
+
+.scroll-to-top.portal-tour-target {
+    position: fixed;
 }
 
 .portal-tour__popover {
