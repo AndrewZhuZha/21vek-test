@@ -72,3 +72,18 @@
 
 - [ ] `js/config.local.js` подключён на prod/stage (см. [config.local.example.js](../js/config.local.example.js))
 - [ ] URL «Полезное» (CMDB, справочник, Wiki) ведут на ресурсы среды
+
+## 8. Мини-экскурсия (tour)
+
+По умолчанию `tour.enabled: false`. Для проверки включите в `config.local.js`: `tour: { enabled: true }`.
+
+- [ ] `enabled: false` — overlay не появляется, кнопка «Тур» скрыта
+- [ ] Первый визит (очистить `portal-tour-v1` в localStorage) → автостарт при `autoStart: true`
+- [ ] «Пропустить» / Esc → тур закрывается, после reload не показывается
+- [ ] «Готово» на последнем шаге → после reload не показывается
+- [ ] `?tour=reset` → сброс и повторный показ
+- [ ] `?tour=1` → принудительный старт без сброса storage
+- [ ] Кнопка «Тур» в шапке при `showReplayButton: true` → повторный показ
+- [ ] Tab не выходит за пределы popover тура
+- [ ] `prefers-reduced-motion`: без анимации spotlight
+- [ ] Открытая модалка заявки → тур приостанавливается, после закрытия продолжается

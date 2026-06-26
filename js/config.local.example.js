@@ -16,5 +16,10 @@ window.PortalConfigLocal = {
     //     wiki: 'https://wiki.example.com/',
     //     learning: 'https://wiki.example.com/learning',
     //     smdb: 'http://snipeit-tb.triovist.local/'
+    // },
+    // tour: {
+    //     enabled: true,
+    //     autoStart: true,
+    //     showReplayButton: true
     // }
 };
