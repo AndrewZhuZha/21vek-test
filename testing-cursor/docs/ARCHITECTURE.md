@@ -8,7 +8,7 @@
 
 **Конец `<body>`:**
 ```
-config.js → config.local.js → modal.js → form.js → tracker.js → theme.js → nav.js → search-index.js → search.js → cards.js → request-types.js → app.js
+config.js → config.local.js → modal.js → form.js → tracker.js → theme.js → nav.js → search-index.js → search.js → cards.js → request-types.js → app.js → tour/storage.js → tour/steps.js → tour/spotlight.js → tour/index.js
 ```
 
 ## Глобальные контракты
@@ -23,6 +23,8 @@ config.js → config.local.js → modal.js → form.js → tracker.js → theme.
 | `PortalTracker` | namespace | `submitToTracker`, `submitPasswordReset`, `setButtonLoading`, … | `js/tracker.js` | `app.js` |
 | `PortalSearch` | namespace | `createMatcher(query)` → `{ matchesCard(card) }` | `js/search.js` | `js/cards.js` |
 | `PortalTheme` | namespace | `getTheme()`, `setTheme()`, `toggleTheme()` | `js/theme.js` | опционально внешние интеграции |
+| `PortalTour` | namespace | `start(opts)`, `reset()`, `isCompleted()`, `skip()` | `js/tour/index.js` | опционально внешние интеграции |
+| `PortalTourStorage` | namespace | `isCompleted()`, `markCompleted()`, `reset()` | `js/tour/storage.js` | `js/tour/index.js` |
 
 ## Конфигурация среды
 
@@ -36,7 +38,27 @@ window.PortalConfigLocal = {
 };
 ```
 
-После `config.local.js` срабатывает merge в `config.js`.
+После `config.local.js` срабатывает merge в `config.js` (в т.ч. глубокий merge для `usefulLinks`, `externalLinks`, `tour`).
+
+### Мини-экскурсия (`tour`)
+
+Флаги в `PortalConfig.tour` ([js/config.js](../js/config.js)):
+
+| Поле | По умолчанию | Назначение |
+|------|--------------|------------|
+| `enabled` | `false` | Главный выключатель модуля |
+| `storageKey` | `'portal-tour-v1'` | Ключ localStorage; смена версии перезапускает тур |
+| `autoStart` | `true` | Автозапуск при первом визите |
+| `showReplayButton` | `true` | Кнопка «Тур» в шапке (`#tourReplayBtn`) |
+| `replayButtonSelector` | `'#tourReplayBtn'` | Селектор кнопки повторного показа |
+
+Шаги тура — [js/tour/steps.js](../js/tour/steps.js). Стили — [css/tour.css](../css/tour.css).
+
+Включение на среде: `tour: { enabled: true }` в `config.local.js`.
+
+QA: `?tour=1` — принудительный старт; `?tour=reset` — сброс storage и старт.
+
+При `enabled: false` скрипты загружаются, но `PortalTour` — no-op.
 
 ## События документа
 
@@ -47,6 +69,9 @@ window.PortalConfigLocal = {
 | `portal:focus-search` | — | Ctrl/Cmd+F — фокус на поле поиска |
 | `portal:task-submitted` | `{ issueKey, requestType }` | Успешная отправка заявки (prod) |
 | `portal:task-failed` | `{ error, requestType }` | Ошибка отправки заявки |
+| `portal:tour-started` | — | Начало мини-экскурсии |
+| `portal:tour-completed` | — | Тур завершён до последнего шага |
+| `portal:tour-skipped` | — | Тур пропущен (Esc / «Пропустить») |
 
 ## Добавление новой услуги
 

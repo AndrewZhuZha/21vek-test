@@ -36,7 +36,15 @@ window.PortalConfig = {
     /** Шаблон ссылки на задачу после успеха. Плейсхолдер: {issueKey} */
     trackerIssueUrlTemplate: 'https://tracker.yandex.ru/{issueKey}',
     /** Блокировка повторной отправки после submit, мс. */
-    submitCooldownMs: 2500
+    submitCooldownMs: 2500,
+    /** Мини-экскурсия по порталу (js/tour/). */
+    tour: {
+        enabled: true,
+        storageKey: 'portal-tour-v1',
+        showReplayButton: true,
+        autoStart: true,
+        replayButtonSelector: '#tourReplayBtn'
+    }
 };
 
 (function mergeLocalPortalConfig() {
@@ -52,6 +60,12 @@ window.PortalConfig = {
             window.PortalConfig.externalLinks = {
                 ...window.PortalConfig.externalLinks,
                 ...window.PortalConfigLocal.externalLinks
+            };
+        }
+        if (window.PortalConfigLocal.tour) {
+            window.PortalConfig.tour = {
+                ...window.PortalConfig.tour,
+                ...window.PortalConfigLocal.tour
             };
         }
     }
