@@ -1,0 +1,83 @@
+.hidden {
+    display: none;
+}
+
+.modal {
+    position: relative;
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-width: 0;
+    scrollbar-gutter: stable;
+}
+
+.modal__close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 2;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.modal__close::before,
+.modal__close::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 1.5px;
+    border-radius: 1px;
+    background: currentColor;
+}
+
+.modal__close::before {
+    transform: rotate(45deg);
+}
+
+.modal__close::after {
+    transform: rotate(-45deg);
+}
+
+.modal__close:hover {
+    background: color-mix(in srgb, var(--surface-muted) 88%, transparent);
+    color: var(--text-secondary);
+}
+
+.modal__close:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-deep) 30%, transparent);
+}
+
+.modal h3 {
+    padding-right: 2.4rem;
+}
+
+.modal form {
+    min-width: 0;
+}
+
+.modal .form-group input,
+.modal .form-group textarea,
+.modal .form-group select {
+    max-width: 100%;
+}
+
+.modal h3,
+.modal p,
+.modal label,
+.modal .field-note,
+.modal .location-group-title {
+    overflow-wrap: anywhere;
+}
+
+.modal-actions {
+    flex-wrap: wrap;
+}
