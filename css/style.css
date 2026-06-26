@@ -179,16 +179,21 @@ a {
     color: color-mix(in srgb, var(--text-muted) 72%, transparent);
 }
 
-.header-link-btn__hint {
-    display: none;
-    font-weight: 500;
-    font-size: 0.68rem;
+.portal-soon-tip {
+    position: fixed;
+    z-index: 10002;
+    pointer-events: none;
+    padding: 0.16rem 0.4rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.62rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
     color: var(--text-muted);
-}
-
-.header-link-btn--placeholder:hover .header-link-btn__hint,
-.header-link-btn--placeholder:focus-visible .header-link-btn__hint {
-    display: inline;
+    background: var(--surface-card);
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-soft);
+    white-space: nowrap;
 }
 
 @supports not (color: color-mix(in srgb, red 50%, blue)) {
