@@ -199,6 +199,10 @@ window.PortalTourSpotlight = (function () {
         window.addEventListener('scroll', scheduleLayout, true);
     }
 
+    function isFixedTarget(element) {
+        return window.getComputedStyle(element).position === 'fixed';
+    }
+
     function showStep(step, index, total, handlers) {
         ensureDom();
         onNext = handlers.onNext;
@@ -219,10 +223,13 @@ window.PortalTourSpotlight = (function () {
         highlightedTarget = target;
         target.classList.add('portal-tour-target');
 
-        if (!prefersReducedMotion()) {
-            target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        } else {
-            target.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+        const shouldScrollIntoView = !step.skipScrollIntoView && !isFixedTarget(target);
+        if (shouldScrollIntoView) {
+            if (!prefersReducedMotion()) {
+                target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            } else {
+                target.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+            }
         }
 
         progressEl.textContent = `Шаг ${index + 1} из ${total}`;
