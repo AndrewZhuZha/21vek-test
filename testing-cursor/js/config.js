@@ -27,6 +27,6 @@ window.PortalConfig = {
     },
     themeStorageKey: 'portal-theme',
     themeTransitionMs: 140,
-    defaultTheme: 'light',
+    defaultTheme: 'system',
     demoMode: true
 };

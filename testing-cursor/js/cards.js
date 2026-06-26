@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchField = document.querySelector('.search-field');
     const searchClearBtn = document.getElementById('searchClearBtn');
     const emptyState = document.getElementById('searchEmptyState');
-    const thinkingState = document.getElementById('searchThinking');
+    const searchSpinner = document.getElementById('searchSpinner');
     const clearSearchBtn = document.getElementById('clearSearchBtn');
     const homeTitleBtn = document.getElementById('homeTitleBtn');
     const hideTimers = new WeakMap();
@@ -85,16 +85,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setThinkingState(active) {
-        if (!thinkingState) return;
         if (thinkingHideTimer) {
             clearTimeout(thinkingHideTimer);
             thinkingHideTimer = null;
         }
 
+        searchField?.classList.toggle('is-searching', active);
+
+        if (!searchSpinner) return;
+
         if (active) {
-            if (thinkingState.classList.contains('hidden')) {
-                thinkingState.classList.remove('hidden');
-                thinkingState.setAttribute('aria-hidden', 'false');
+            if (searchSpinner.classList.contains('hidden')) {
+                searchSpinner.classList.remove('hidden');
+                searchSpinner.setAttribute('aria-hidden', 'false');
                 thinkingShownAt = Date.now();
             }
             return;
@@ -103,8 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const elapsed = Date.now() - thinkingShownAt;
         const delay = Math.max(0, THINKING_MIN_MS - elapsed);
         thinkingHideTimer = setTimeout(() => {
-            thinkingState.classList.add('hidden');
-            thinkingState.setAttribute('aria-hidden', 'true');
+            searchSpinner.classList.add('hidden');
+            searchSpinner.setAttribute('aria-hidden', 'true');
+            searchField?.classList.remove('is-searching');
             thinkingHideTimer = null;
         }, delay);
     }
@@ -266,12 +270,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function updateSearchPlaceholder() {
+        if (!searchInput) return;
+        const desktopMedia = window.matchMedia('(min-width: 768px)');
+        const isMac = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '');
+        if (desktopMedia.matches) {
+            searchInput.placeholder = isMac ? 'Поиск… (⌘F)' : 'Поиск… (Ctrl+F)';
+        } else {
+            searchInput.placeholder = 'Поиск...';
+        }
+    }
+
     applySectionOffset();
     window.addEventListener('resize', applySectionOffset);
     window.addEventListener('orientationchange', () => {
         window.setTimeout(applySectionOffset, 80);
     });
+    window.matchMedia('(min-width: 768px)').addEventListener('change', updateSearchPlaceholder);
     document.addEventListener('portal:filter-changed', applySectionOffset);
+
+    updateSearchPlaceholder();
 
     if (searchInput) {
         searchInput.addEventListener('input', queueFilter);

@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         link.setAttribute('href', `mailto:${email}?subject=${encodeURIComponent(subject)}`);
     });
     const { open: openModal, close: closeModalOverlay, setup: setupModal } = window.PortalModal;
-    const { showError, showNotice, clearError, requireValue } = window.PortalForm;
+    const { showError, showNotice, clearError, requireValue, showGlobalError } = window.PortalForm;
 
     const requestMap = window.PortalRequestTypes || {};
     if (!Object.keys(requestMap).length) {
@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (reqType && requestMap[reqType]) {
                 openTaskModal(reqType);
             } else {
-                alert('Тип заявки временно не настроен, обратитесь в support.');
+                showGlobalError('Тип заявки временно не настроен. Обратитесь в IT Support.');
             }
         });
     });

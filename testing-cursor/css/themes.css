@@ -36,3 +36,11 @@
     --selection-bg: color-mix(in srgb, var(--accent-pink-start) 42%, var(--accent-deep) 18%);
     --selection-color: #ffffff;
 }
+
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+    [data-theme="dark"] {
+        --scrollbar-thumb: rgba(167, 176, 195, 0.48);
+        --scrollbar-thumb-hover: rgba(255, 31, 122, 0.52);
+        --selection-bg: rgba(255, 31, 122, 0.38);
+    }
+}

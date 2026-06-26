@@ -40,5 +40,20 @@ window.PortalForm = (function () {
         return value?.trim() ? null : message;
     }
 
-    return { showError, showNotice, clearError, requireValue };
+    function clearGlobalNotice() {
+        const el = document.getElementById('portalGlobalNotice');
+        if (!el) return;
+        el.textContent = '';
+        el.className = 'portal-global-notice hidden';
+    }
+
+    function showGlobalError(message) {
+        const el = document.getElementById('portalGlobalNotice');
+        if (!el) return;
+        el.textContent = message;
+        el.className = 'portal-global-notice portal-global-notice--error';
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    return { showError, showNotice, clearError, requireValue, showGlobalError, clearGlobalNotice };
 })();

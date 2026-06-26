@@ -187,61 +187,75 @@
 }
 
 .scroll-to-top {
-    display: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(20px, env(safe-area-inset-bottom));
+    z-index: 90;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--surface-card) 92%, transparent);
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-soft);
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition:
+        opacity 0.18s ease,
+        visibility 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.12s ease,
+        border-color 0.12s ease,
+        color 0.12s ease;
+}
+
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .scroll-to-top {
+        background: rgba(255, 255, 255, 0.92);
+    }
+
+    [data-theme="dark"] .scroll-to-top {
+        background: rgba(23, 27, 36, 0.92);
+    }
+}
+
+.scroll-to-top.is-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.scroll-to-top:hover {
+    color: var(--accent-deep);
+    border-color: color-mix(in srgb, var(--accent-deep) 28%, var(--border-subtle));
+    box-shadow: var(--shadow-medium);
+}
+
+.scroll-to-top:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-outline), var(--shadow-medium);
+}
+
+.scroll-to-top__icon {
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1;
 }
 
 @media (min-width: 1280px) {
     .scroll-to-top {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        position: fixed;
         right: max(24px, env(safe-area-inset-right));
         bottom: max(28px, env(safe-area-inset-bottom));
-        z-index: 90;
         width: 46px;
         height: 46px;
-        padding: 0;
-        border: 1px solid var(--border-subtle);
-        border-radius: 999px;
-        background: color-mix(in srgb, var(--surface-card) 92%, transparent);
-        color: var(--text-secondary);
-        box-shadow: var(--shadow-soft);
-        cursor: pointer;
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transform: translateY(10px);
-        transition:
-            opacity 0.18s ease,
-            visibility 0.18s ease,
-            transform 0.18s ease,
-            box-shadow 0.12s ease,
-            border-color 0.12s ease,
-            color 0.12s ease;
-    }
-
-    .scroll-to-top.is-visible {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-        transform: translateY(0);
-    }
-
-    .scroll-to-top:hover {
-        color: var(--accent-deep);
-        border-color: color-mix(in srgb, var(--accent-deep) 28%, var(--border-subtle));
-        box-shadow: var(--shadow-medium);
-    }
-
-    .scroll-to-top:focus-visible {
-        outline: none;
-        box-shadow: var(--focus-outline), var(--shadow-soft);
-    }
-
-    .scroll-to-top__icon {
-        font-size: 1.15rem;
-        font-weight: 700;
-        line-height: 1;
     }
 }
+
