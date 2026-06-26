@@ -10,6 +10,35 @@
     visibility: visible;
 }
 
+.portal-tour--modal::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.68);
+    pointer-events: none;
+}
+
+.portal-tour__popover--center {
+    width: min(24rem, calc(100vw - 2rem));
+    text-align: center;
+}
+
+.portal-tour__popover--center .portal-tour__actions {
+    justify-content: center;
+}
+
+.portal-tour__popover--center .portal-tour__skip {
+    margin-right: 0;
+}
+
+[data-theme="dark"] .portal-tour--modal::before {
+    background: rgba(0, 0, 0, 0.78);
+}
+
+.portal-tour__progress[hidden] {
+    display: none;
+}
+
 .portal-tour__spotlight {
     position: fixed;
     border-radius: var(--radius-md);

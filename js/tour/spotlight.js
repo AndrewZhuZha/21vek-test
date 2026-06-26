@@ -76,7 +76,14 @@ window.PortalTourSpotlight = (function () {
     }
 
     function layoutCurrent() {
-        if (!spotlight || !popover || !activeTarget) return;
+        if (!spotlight || !popover) return;
+
+        if (root && root.classList.contains('portal-tour--modal')) {
+            positionModalPopover();
+            return;
+        }
+
+        if (!activeTarget) return;
 
         const rect = activeTarget.getBoundingClientRect();
         if (!rect.width && !rect.height) {
@@ -122,9 +129,66 @@ window.PortalTourSpotlight = (function () {
 
         popover.style.top = `${top}px`;
         popover.style.left = `${left}px`;
+        popover.style.transform = '';
     }
 
-    function ensureDom() {
+    function positionModalPopover() {
+        popover.style.top = '50%';
+        popover.style.left = '50%';
+        popover.style.transform = 'translate(-50%, -50%)';
+    }
+
+    function applyStepContent(step, index, total) {
+        progressEl.hidden = Boolean(step.hideProgress);
+        if (!step.hideProgress) {
+            progressEl.textContent = `Шаг ${index + 1} из ${total}`;
+        }
+
+        titleEl.textContent = step.title;
+        textEl.textContent = step.text;
+
+        backBtn.hidden = step.hideBack !== undefined ? step.hideBack : index === 0;
+        skipBtn.hidden = Boolean(step.hideSkip);
+        nextBtn.textContent = step.nextLabel || (index === total - 1 ? 'Готово' : 'Далее');
+    }
+
+    function activateTourUi() {
+        root.classList.add('portal-tour--active');
+        root.setAttribute('aria-hidden', 'false');
+
+        if (!lastFocus) {
+            lastFocus = document.activeElement;
+        }
+
+        window.requestAnimationFrame(() => {
+            layoutCurrent();
+            nextBtn.focus();
+        });
+
+        document.addEventListener('keydown', onKeydown);
+    }
+
+    function showModalStep(step, index, total, handlers) {
+        onNext = handlers.onNext;
+        onBack = handlers.onBack;
+        onSkip = handlers.onSkip;
+
+        if (typeof step.prepare === 'function') {
+            step.prepare();
+        }
+
+        clearHighlight();
+        activeTarget = null;
+
+        root.classList.add('portal-tour--modal');
+        spotlight.style.display = 'none';
+        popover.classList.add('portal-tour__popover--center');
+        popover.dataset.placement = 'center';
+
+        applyStepContent(step, index, total);
+        activateTourUi();
+        return true;
+    }
         if (root) return;
 
         root = document.createElement('div');
@@ -209,6 +273,10 @@ window.PortalTourSpotlight = (function () {
         onBack = handlers.onBack;
         onSkip = handlers.onSkip;
 
+        if (step.modal) {
+            return showModalStep(step, index, total, handlers);
+        }
+
         const target = document.querySelector(step.selector);
         if (!target) {
             return false;
@@ -223,6 +291,11 @@ window.PortalTourSpotlight = (function () {
         highlightedTarget = target;
         target.classList.add('portal-tour-target');
 
+        root.classList.remove('portal-tour--modal');
+        popover.classList.remove('portal-tour__popover--center');
+        spotlight.style.display = 'block';
+        popover.dataset.placement = step.placement || 'bottom';
+
         const shouldScrollIntoView = !step.skipScrollIntoView && !isFixedTarget(target);
         if (shouldScrollIntoView) {
             if (!prefersReducedMotion()) {
@@ -232,28 +305,9 @@ window.PortalTourSpotlight = (function () {
             }
         }
 
-        progressEl.textContent = `Шаг ${index + 1} из ${total}`;
-        titleEl.textContent = step.title;
-        textEl.textContent = step.text;
-        popover.dataset.placement = step.placement || 'bottom';
-
-        backBtn.hidden = index === 0;
-        nextBtn.textContent = index === total - 1 ? 'Готово' : 'Далее';
-
-        root.classList.add('portal-tour--active');
-        root.setAttribute('aria-hidden', 'false');
-
-        if (!lastFocus) {
-            lastFocus = document.activeElement;
-        }
-
+        applyStepContent(step, index, total);
+        activateTourUi();
         layoutCurrent();
-        window.requestAnimationFrame(() => {
-            layoutCurrent();
-            nextBtn.focus();
-        });
-
-        document.addEventListener('keydown', onKeydown);
         return true;
     }
 
@@ -263,8 +317,11 @@ window.PortalTourSpotlight = (function () {
         activeTarget = null;
 
         if (root) {
-            root.classList.remove('portal-tour--active');
+            root.classList.remove('portal-tour--active', 'portal-tour--modal');
             root.setAttribute('aria-hidden', 'true');
+        }
+        if (popover) {
+            popover.classList.remove('portal-tour__popover--center');
         }
 
         if (lastFocus && typeof lastFocus.focus === 'function') {
