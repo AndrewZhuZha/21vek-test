@@ -189,6 +189,8 @@ window.PortalTourSpotlight = (function () {
         activateTourUi();
         return true;
     }
+
+    function ensureDom() {
         if (root) return;
 
         root = document.createElement('div');
