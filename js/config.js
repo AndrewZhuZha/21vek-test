@@ -43,7 +43,8 @@ window.PortalConfig = {
         storageKey: 'portal-tour-v1',
         showReplayButton: true,
         autoStart: true,
-        replayButtonSelector: '#tourReplayBtn'
+        replayButtonSelector: '#tourReplayBtn',
+        replayButtonLabel: 'Показать тур'
     }
 };
 

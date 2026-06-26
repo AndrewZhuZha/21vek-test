@@ -46,6 +46,15 @@
         }
     }
 
+    function stopRunning() {
+        if (!running) return;
+        spotlight.teardown();
+        unwatchModals();
+        running = false;
+        pausedForModal = false;
+        currentIndex = -1;
+    }
+
     function setupReplayButton() {
         const selector = tourConfig.replayButtonSelector || '#tourReplayBtn';
         const button = document.querySelector(selector);
@@ -61,7 +70,11 @@
         button.classList.remove('hidden');
         button.setAttribute('aria-hidden', 'false');
         button.tabIndex = 0;
+        if (tourConfig.replayButtonLabel) {
+            button.textContent = tourConfig.replayButtonLabel;
+        }
         button.addEventListener('click', () => {
+            stopRunning();
             start({ force: true });
         });
     }
@@ -148,7 +161,10 @@
 
     function start(options) {
         const opts = options || {};
-        if (running) return;
+        if (running) {
+            if (!opts.force) return;
+            stopRunning();
+        }
         if (!steps.length) return;
 
         if (spotlight.isModalOpen()) return;

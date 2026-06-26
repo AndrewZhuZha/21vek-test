@@ -149,6 +149,14 @@ a {
     display: contents;
 }
 
+.header-links__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-left: auto;
+    flex: 0 0 auto;
+}
+
 .header-link-btn {
     text-decoration: none;
     color: var(--text-muted);
@@ -204,11 +212,19 @@ a {
     }
 }
 
+.header-link-btn--tour {
+    cursor: pointer;
+    font-family: inherit;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+}
+
 .header-link-btn--reset {
     cursor: pointer;
     font-family: inherit;
     flex: 0 0 auto;
-    margin-left: auto;
+    margin-left: 0;
     white-space: nowrap;
     color: var(--text-muted);
     background: transparent;
@@ -1027,6 +1043,7 @@ a {
         padding: 0.14rem 0.2rem;
     }
 
+    .header-link-btn--tour,
     .header-link-btn--reset {
         font-size: 0.71rem;
         min-height: 32px;
@@ -1124,6 +1141,7 @@ a {
         padding: 0.1rem 0.14rem;
     }
 
+    .header-link-btn--tour,
     .header-link-btn--reset {
         font-size: 0.65rem;
         min-height: 30px;
