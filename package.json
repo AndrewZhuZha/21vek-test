@@ -1,0 +1,10 @@
+{
+  "name": "21vek-it-portal",
+  "private": true,
+  "description": "ИТ-портал 21vek — статический сайт без npm-зависимостей",
+  "scripts": {
+    "build:search": "node scripts/build-search-index.mjs",
+    "build:errors": "node scripts/build-error-pages.mjs",
+    "build": "npm run build:search && npm run build:errors"
+  }
+}

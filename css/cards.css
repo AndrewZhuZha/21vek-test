@@ -27,52 +27,7 @@
     gap: 1.05rem;
 }
 
-.search-empty-state {
-    margin: 0.75rem 0 1.2rem;
-    padding: 0.75rem 0.95rem;
-    border-radius: 10px;
-    border: 1px solid var(--border-soft);
-    background: var(--surface-card-soft);
-    color: var(--text-accent);
-    font-size: 0.88rem;
-}
-
-.search-thinking {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-}
-
-.search-thinking.hidden {
-    display: none;
-}
-
-.search-thinking__spinner {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    border: 2.5px solid color-mix(in srgb, var(--border-soft) 85%, transparent);
-    border-top-color: var(--accent-pink-start);
-    animation: searchThinkingSpin 0.7s linear infinite;
-    will-change: transform;
-    transform: translateZ(0);
-}
-
-@keyframes searchThinkingSpin {
-    to {
-        transform: translateZ(0) rotate(360deg);
-    }
-}
-
 .service-card {
-    --card-visible-max-height: 360px;
     appearance: none;
     -webkit-appearance: none;
     font: inherit;
@@ -88,8 +43,8 @@
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    max-height: var(--card-visible-max-height);
-    overflow: hidden;
+    min-height: 0;
+    overflow: visible;
     contain: layout style;
     transition: opacity 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -162,7 +117,6 @@
     }
 
     .service-card {
-        --card-visible-max-height: 960px;
         padding: 15px;
     }
 

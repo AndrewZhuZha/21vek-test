@@ -210,7 +210,6 @@ function initScrollToTop() {
     const button = document.getElementById('scrollToTopBtn');
     if (!button) return;
 
-    const desktopMedia = window.matchMedia('(min-width: 1280px)');
     const reduceMotionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
     let rafScheduled = false;
 
@@ -220,12 +219,11 @@ function initScrollToTop() {
 
     function updateVisibility() {
         rafScheduled = false;
-        const show = desktopMedia.matches
-            && window.scrollY > 320
-            && !isModalOpen();
+        const show = window.scrollY > 320 && !isModalOpen();
 
         button.classList.toggle('is-visible', show);
         button.setAttribute('aria-hidden', String(!show));
+        button.tabIndex = show ? 0 : -1;
     }
 
     function scheduleVisibilityUpdate() {
@@ -243,7 +241,6 @@ function initScrollToTop() {
 
     window.addEventListener('scroll', scheduleVisibilityUpdate, { passive: true });
     window.addEventListener('resize', scheduleVisibilityUpdate);
-    desktopMedia.addEventListener('change', scheduleVisibilityUpdate);
 
     document.addEventListener('click', (event) => {
         if (event.target.closest('.modal-overlay')) {

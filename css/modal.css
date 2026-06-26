@@ -1,7 +1,3 @@
-.hidden {
-    display: none;
-}
-
 .modal {
     position: relative;
     overflow-x: hidden;
@@ -80,4 +76,14 @@
 
 .modal-actions {
     flex-wrap: wrap;
+}
+
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .modal__close:hover {
+        background: rgba(243, 244, 246, 0.88);
+    }
+
+    .modal__close:focus-visible {
+        box-shadow: 0 0 0 2px rgba(196, 0, 107, 0.3);
+    }
 }
