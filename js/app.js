@@ -21,26 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const { open: openModal, close: closeModalOverlay, setup: setupModal } = window.PortalModal;
     const { showError, showNotice, clearError, requireValue } = window.PortalForm;
 
-    const requestMap = {
-        tech_support: { title: 'Техническая поддержка — запрос', options: ['Консультация', 'Помощь с ПО', 'Настройка рабочего места'], defaultOpt: 'Консультация' },
-        software_issues: { title: 'Сбои и ошибки ПО', options: ['Критический сбой', 'Зависание программы', 'Ошибка при запуске'], defaultOpt: 'Критический сбой' },
-        equipment_issue: { title: 'Выдача оборудования', options: ['Выдать ноутбук', 'Выдать ПК', 'Выдать монитор/периферию'], defaultOpt: 'Выдать ноутбук' },
-        equipment_return: { title: 'Возврат оборудования', options: ['Сдача при увольнении', 'Сдача в ремонт', 'Списание'], defaultOpt: 'Сдача при увольнении' },
-        equipment_transfer: { title: 'Передача оборудования', options: ['Передача другому сотруднику', 'Перемещение между офисами'], defaultOpt: 'Передача другому сотруднику' },
-        hr_new: { title: 'Новый сотрудник', options: ['Создать УЗ', 'Выдать оборудование', 'Оформить пропуск'], defaultOpt: 'Создать УЗ' },
-        hr_dismiss: { title: 'Увольнение сотрудника', options: ['Блокировка УЗ', 'Приём техники', 'Отзыв доступов'], defaultOpt: 'Блокировка УЗ' },
-        hr_change: { title: 'Изменение сотрудника', options: ['Смена отдела', 'Изменение прав доступа', 'Обновление данных'], defaultOpt: 'Смена отдела' },
-        org_structure: { title: 'Изменение орг. структуры', options: ['Создать отдел', 'Переименовать', 'Удалить подразделение'], defaultOpt: 'Создать отдел' },
-        vm_create: { title: 'Создание ВМ', options: ['Linux ВМ', 'Windows ВМ', 'Дополнительные ресурсы'], defaultOpt: 'Linux ВМ' },
-        network_access: { title: 'Предоставление сетевого доступа', options: ['VPN доступ', 'Открыть порт', 'Доступ к VLAN'], defaultOpt: 'VPN доступ' },
-        skud_access: { title: 'Предоставление доступа (СКУД)', options: ['Новый пропуск', 'Настройка турникета', 'Электронный замок'], defaultOpt: 'Новый пропуск' },
-        skud_repair: { title: 'Ремонт СКУД', options: ['Не работает турникет', 'Считыватель', 'Контроллер'], defaultOpt: 'Не работает турникет' },
-        camera_install: { title: 'Установка видеонаблюдения', options: ['Монтаж камеры', 'Настройка записи', 'Расширение системы'], defaultOpt: 'Монтаж камеры' },
-        printer_setup: { title: 'Программная настройка принтера', options: ['Добавить принтер', 'Настройка драйверов', 'Сетевая печать'], defaultOpt: 'Добавить принтер' },
-        printer_repair: { title: 'Ремонт и обслуживание принтера', options: ['Заправка картриджа', 'Замена узлов', 'Чистка/ремонт'], defaultOpt: 'Заправка картриджа' },
-        other_noform: { title: 'Без формы — другой запрос', options: ['Произвольный запрос', 'Административное', 'Другое'], defaultOpt: 'Произвольный запрос' },
-        universal_it: { title: 'Обращение в ИТ (универсальное)', options: ['Инцидент', 'Запрос услуги', 'Консультация'], defaultOpt: 'Запрос услуги' }
-    };
+    const requestMap = window.PortalRequestTypes || {};
+    if (!Object.keys(requestMap).length) {
+        console.error('PortalRequestTypes не загружен. Запустите: node scripts/build-search-index.mjs');
+    }
 
     const modalOverlay = document.getElementById('taskModal');
     const modalTitle = document.getElementById('modalTitle');
@@ -520,6 +504,14 @@ document.addEventListener('DOMContentLoaded', () => {
             fioInput.focus();
         }
     }
+
+    document.querySelectorAll('.service-card').forEach(card => {
+        if (!card.getAttribute('aria-label')) {
+            const label = card.getAttribute('data-title')
+                || card.querySelector('.card-title')?.textContent?.trim();
+            if (label) card.setAttribute('aria-label', label);
+        }
+    });
 
     document.querySelectorAll('.service-card:not(.useful-card)').forEach(card => {
         card.addEventListener('click', () => {

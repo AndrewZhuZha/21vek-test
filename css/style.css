@@ -22,9 +22,6 @@ html {
 
 html.theme-animating :where(
     body,
-    .sidebar-nav,
-    .sidebar-nav__home-btn,
-    .sidebar-nav__item,
     .header,
     .header-link-btn,
     .header-home-btn,
@@ -50,9 +47,6 @@ html.theme-animating :where(
 @media (prefers-reduced-motion: reduce) {
     html.theme-animating :where(
         body,
-        .sidebar-nav,
-        .sidebar-nav__home-btn,
-        .sidebar-nav__item,
         .header,
         .header-link-btn,
         .header-home-btn,

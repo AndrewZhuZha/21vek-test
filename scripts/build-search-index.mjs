@@ -7,10 +7,11 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
 const INDEX_HTML_PATH = path.join(rootDir, 'index.html');
-const APP_JS_PATH = path.join(rootDir, 'js', 'app.js');
 const CONFIG_JS_PATH = path.join(rootDir, 'js', 'config.js');
 const OVERRIDES_PATH = path.join(rootDir, 'data', 'search.overrides.json');
+const REQUEST_TYPES_PATH = path.join(rootDir, 'data', 'request-types.json');
 const OUTPUT_PATH = path.join(rootDir, 'js', 'search-index.js');
+const REQUEST_TYPES_OUTPUT_PATH = path.join(rootDir, 'js', 'request-types.js');
 
 function normalizeText(value) {
     return String(value || '')
@@ -52,29 +53,23 @@ function parseConfigSections(configSource) {
     return sections;
 }
 
-function parseRequestMap(appSource) {
-    const requestMap = {};
-    const mapMatch = appSource.match(/const requestMap = \{([\s\S]*?)\n\s*\};/);
-    if (!mapMatch) {
-        throw new Error('Не удалось найти requestMap в js/app.js');
-    }
+function validateRequestTypesSync(cards, requestMap) {
+    const htmlRequestTypes = new Set(
+        cards.filter((card) => card.requestType).map((card) => card.requestType)
+    );
+    const jsonRequestTypes = new Set(Object.keys(requestMap));
 
-    const entryPattern = /([a-z0-9_]+)\s*:\s*\{\s*title:\s*'([^']*)',\s*options:\s*\[([\s\S]*?)\],\s*defaultOpt:\s*'[^']*'\s*\}/g;
-    let match = entryPattern.exec(mapMatch[1]);
-    while (match) {
-        const [, id, title, optionsRaw] = match;
-        const options = [];
-        const optionPattern = /'([^']*)'/g;
-        let optionMatch = optionPattern.exec(optionsRaw);
-        while (optionMatch) {
-            options.push(optionMatch[1]);
-            optionMatch = optionPattern.exec(optionsRaw);
+    htmlRequestTypes.forEach((requestType) => {
+        if (!jsonRequestTypes.has(requestType)) {
+            throw new Error(`Карточка HTML data-request-type="${requestType}" отсутствует в data/request-types.json`);
         }
-        requestMap[id] = { title, options };
-        match = entryPattern.exec(mapMatch[1]);
-    }
+    });
 
-    return requestMap;
+    jsonRequestTypes.forEach((requestType) => {
+        if (!htmlRequestTypes.has(requestType)) {
+            throw new Error(`Тип "${requestType}" из data/request-types.json не найден среди карточек HTML`);
+        }
+    });
 }
 
 function parseIndexCards(indexSource) {
@@ -90,7 +85,7 @@ function parseIndexCards(indexSource) {
         const sectionTitle = titleMatch ? titleMatch[1].trim() : sectionId;
         sections[sectionId] = sectionTitle;
 
-        const cardPattern = /<div class="service-card([^>]*)>[\s\S]*?<div class="card-title">([\s\S]*?)<\/div>[\s\S]*?<div class="card-desc">([\s\S]*?)<\/div>/g;
+        const cardPattern = /<(?:div|button)[^>]*class="service-card([^>]*)>[\s\S]*?<div class="card-title">([\s\S]*?)<\/div>[\s\S]*?<div class="card-desc">([\s\S]*?)<\/div>/g;
         let cardMatch = cardPattern.exec(sectionHtml);
 
         while (cardMatch) {
@@ -131,17 +126,19 @@ function normalizeSynonyms(globalSynonyms) {
 }
 
 async function build() {
-    const [indexSource, appSource, configSource, overridesRaw] = await Promise.all([
+    const [indexSource, configSource, overridesRaw, requestTypesRaw] = await Promise.all([
         readFile(INDEX_HTML_PATH, 'utf8'),
-        readFile(APP_JS_PATH, 'utf8'),
         readFile(CONFIG_JS_PATH, 'utf8'),
-        readFile(OVERRIDES_PATH, 'utf8')
+        readFile(OVERRIDES_PATH, 'utf8'),
+        readFile(REQUEST_TYPES_PATH, 'utf8')
     ]);
 
     const overrides = JSON.parse(overridesRaw);
+    const requestMap = JSON.parse(requestTypesRaw);
     const configSections = parseConfigSections(configSource);
-    const requestMap = parseRequestMap(appSource);
     const parsedIndex = parseIndexCards(indexSource);
+
+    validateRequestTypesSync(parsedIndex.cards, requestMap);
 
     const sectionIds = new Set([
         ...Object.keys(configSections),
@@ -216,9 +213,15 @@ async function build() {
     };
 
     const output = `/**\n * AUTO-GENERATED FILE.\n * Source: scripts/build-search-index.mjs\n * Do not edit manually.\n */\nwindow.PortalSearchIndex = ${JSON.stringify(searchIndex, null, 4)};\n`;
-    await writeFile(OUTPUT_PATH, output, 'utf8');
+    const requestTypesOutput = `/**\n * AUTO-GENERATED FILE.\n * Source: data/request-types.json via scripts/build-search-index.mjs\n * Do not edit manually.\n */\nwindow.PortalRequestTypes = ${JSON.stringify(requestMap, null, 4)};\n`;
+
+    await Promise.all([
+        writeFile(OUTPUT_PATH, output, 'utf8'),
+        writeFile(REQUEST_TYPES_OUTPUT_PATH, requestTypesOutput, 'utf8')
+    ]);
 
     console.log(`Search index generated: ${path.relative(rootDir, OUTPUT_PATH)}`);
+    console.log(`Request types generated: ${path.relative(rootDir, REQUEST_TYPES_OUTPUT_PATH)}`);
     console.log(`Sections: ${searchIndex.stats.sections}; cards: ${searchIndex.stats.cards}`);
 }
 

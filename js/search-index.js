@@ -5,7 +5,7 @@
  */
 window.PortalSearchIndex = {
     "version": 1,
-    "generatedAt": "2026-06-26T08:13:04.995Z",
+    "generatedAt": "2026-06-26T08:53:02.580Z",
     "globalSynonyms": {
         "принтер": [
             "мфу",

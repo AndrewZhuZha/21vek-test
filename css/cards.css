@@ -73,6 +73,12 @@
 
 .service-card {
     --card-visible-max-height: 360px;
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    width: 100%;
     background: var(--surface-card);
     border-radius: 12px;
     padding: 14px;
