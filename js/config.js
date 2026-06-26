@@ -13,10 +13,17 @@ window.PortalConfig = {
         { id: 'section-other', label: 'Другие', icon: '📌' },
         { id: 'usefulSection', label: 'Полезное', icon: '🎯' }
     ],
+    supportEmail: 'itsupport@21vek.by',
+    portalTagline: 'IT-Support · 21VEK',
+    externalLinks: {
+        wiki: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/',
+        learning: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/',
+        smdb: 'http://snipeit-tb.triovist.local/'
+    },
     usefulLinks: {
-        cmdb: 'https://cmdb.company.ru',
+        cmdb: 'http://snipeit-tb.triovist.local/',
         phonebook: 'https://phonebook.company.ru',
-        knowledge: 'https://wiki.company.ru'
+        knowledge: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/'
     },
     themeStorageKey: 'portal-theme',
     themeTransitionMs: 140,

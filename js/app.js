@@ -1,5 +1,23 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const { trackerQueue, twoStepRequestTypes, usefulLinks, demoMode } = window.PortalConfig;
+    const config = window.PortalConfig || {};
+    const { trackerQueue, twoStepRequestTypes, usefulLinks, externalLinks, demoMode } = config;
+
+    document.querySelectorAll('[data-portal-link]').forEach(link => {
+        const key = link.getAttribute('data-portal-link');
+        const url = externalLinks?.[key];
+        if (url) link.setAttribute('href', url);
+    });
+
+    const taglineEl = document.getElementById('portalTagline');
+    if (taglineEl && config.portalTagline) {
+        taglineEl.textContent = config.portalTagline;
+    }
+
+    document.querySelectorAll('[data-support-mail]').forEach(link => {
+        const email = config.supportEmail || 'itsupport@21vek.by';
+        const subject = link.getAttribute('data-mail-subject') || 'ИТ-портал — обращение';
+        link.setAttribute('href', `mailto:${email}?subject=${encodeURIComponent(subject)}`);
+    });
     const { open: openModal, close: closeModalOverlay, setup: setupModal } = window.PortalModal;
     const { showError, showNotice, clearError, requireValue } = window.PortalForm;
 
@@ -496,7 +514,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setModalButtonsForStep(1);
         openModal(modalOverlay);
-        document.getElementById('fio')?.focus();
+        const fioInput = document.getElementById('fio');
+        const prefersTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+        if (fioInput && !prefersTouch) {
+            fioInput.focus();
+        }
     }
 
     document.querySelectorAll('.service-card:not(.useful-card)').forEach(card => {

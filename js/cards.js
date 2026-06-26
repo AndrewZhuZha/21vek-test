@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const thinkingState = document.getElementById('searchThinking');
     const clearSearchBtn = document.getElementById('clearSearchBtn');
     const homeTitleBtn = document.getElementById('homeTitleBtn');
-    const sidebarHomeBtn = document.getElementById('sidebarHomeBtn');
     const hideTimers = new WeakMap();
     const HIDE_ANIMATION_MS = 180;
     const VISIBILITY_SYNC_DELAY_MS = HIDE_ANIMATION_MS + 16;
@@ -76,8 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
             searchField.classList.toggle('has-value', hasValue);
         }
         if (searchClearBtn) {
-            searchClearBtn.hidden = !hasValue;
+            searchClearBtn.setAttribute('aria-hidden', String(!hasValue));
+            searchClearBtn.tabIndex = hasValue ? 0 : -1;
         }
+    }
+
+    function setTypingState(active) {
+        searchField?.classList.toggle('is-typing', active);
     }
 
     function setThinkingState(active) {
@@ -161,11 +165,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applySectionOffset() {
         const stickyNav = document.querySelector('.section-nav');
-        const stickyVisible = stickyNav && window.getComputedStyle(stickyNav).display !== 'none';
-        const stickyTop = stickyVisible ? (parseFloat(window.getComputedStyle(stickyNav).top) || 0) : 0;
-        const offset = stickyVisible
+        const navVisible = stickyNav && window.getComputedStyle(stickyNav).display !== 'none';
+        const navSticky = navVisible && window.getComputedStyle(stickyNav).position === 'sticky';
+        const stickyTop = navSticky ? (parseFloat(window.getComputedStyle(stickyNav).top) || 0) : 0;
+        const offset = navSticky
             ? Math.round(stickyNav.offsetHeight + stickyTop + 14)
-            : 42;
+            : 24;
         getGroups().forEach(group => {
             group.style.scrollMarginTop = `${offset}px`;
         });
@@ -175,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const hasVisibleCards = updateGroupsVisibility();
         updateEmptyState(query, hasVisibleCards);
         setThinkingState(false);
+        setTypingState(false);
         endFilterAnimation();
         dispatchFilterChanged();
     }
@@ -214,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function queueFilter() {
         if (filterDebounceTimer) clearTimeout(filterDebounceTimer);
         beginFilterAnimation();
+        setTypingState(true);
         setThinkingState(true);
         updateSearchFieldState();
         filterDebounceTimer = setTimeout(() => {
@@ -230,6 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         beginFilterAnimation();
         searchInput.value = '';
+        setTypingState(false);
         updateSearchFieldState();
         searchInput.blur();
         setThinkingState(false);
@@ -279,10 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (homeTitleBtn) {
         homeTitleBtn.addEventListener('click', goToHome);
-    }
-
-    if (sidebarHomeBtn) {
-        sidebarHomeBtn.addEventListener('click', goToHome);
     }
 
     window.addEventListener('portal:focus-search', focusSearchWithHotkey);

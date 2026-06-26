@@ -18,6 +18,20 @@
     opacity: var(--watermark-opacity);
     user-select: none;
     white-space: nowrap;
+    pointer-events: none;
+}
+
+@media (max-width: 680px) {
+    .page-bg__watermark {
+        top: 58%;
+        font-size: clamp(2.4rem, 16vw, 4.2rem);
+        opacity: calc(var(--watermark-opacity) * 0.55);
+    }
+
+    .page-bg__blob {
+        opacity: calc(var(--blob-opacity) * 0.72);
+        filter: blur(64px);
+    }
 }
 
 .page-bg__blob {

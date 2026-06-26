@@ -33,9 +33,10 @@ html {
 }
 
 .section-nav__chips::-webkit-scrollbar {
-    height: 5px;
+    display: none;
+    height: 0;
 }
 
-.section-nav__chips::-webkit-scrollbar-thumb {
-    border-width: 1px;
+.section-nav__chips {
+    scrollbar-width: none;
 }

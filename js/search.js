@@ -1,12 +1,13 @@
-// Controlled, deterministic search engine with explicit aliases.
+// Controlled search: literal substring match first, synonyms only for whole words.
 (() => {
     const searchIndex = window.PortalSearchIndex || {};
     const cards = searchIndex.cards || {};
     const sections = searchIndex.sections || {};
     const rawAliases = searchIndex.globalSynonyms || {};
-    const MIN_PREFIX_LEN = 3;
+    const MIN_QUERY_LEN = 3;
+    const MIN_ALIAS_TERM_LEN = 3;
     const STOP_TOKENS = new Set([
-        'и', 'в', 'во', 'на', 'не', 'с', 'со', 'к', 'ко', 'для', 'или', 'а', 'но', 'из', 'у', 'о', 'от'
+        'и', 'в', 'во', 'на', 'с', 'со', 'к', 'ко', 'для', 'или', 'а', 'но', 'из', 'у', 'о', 'от'
     ]);
 
     const EN_TO_RU = {
@@ -30,25 +31,19 @@
         return normalize(value).match(/[a-zа-я0-9]+/g) || [];
     }
 
-    function selectQueryTokens(tokens) {
-        if (tokens.length <= 1) return tokens;
-        const filtered = tokens.filter((token) => !STOP_TOKENS.has(token));
-        return filtered.length ? filtered : tokens;
-    }
-
-    function switchLayout(token, map) {
-        return token
+    function switchLayout(value, map) {
+        return String(value || '')
             .split('')
             .map((char) => map[char] || char)
             .join('');
     }
 
-    function tokenVariants(token) {
-        const normalizedToken = normalize(token);
-        if (!normalizedToken) return [];
-        const variants = new Set([normalizedToken]);
-        const ruVariant = normalize(switchLayout(normalizedToken, EN_TO_RU));
-        const enVariant = normalize(switchLayout(normalizedToken, RU_TO_EN));
+    function layoutVariants(value) {
+        const normalized = normalize(value);
+        if (!normalized) return [];
+        const variants = new Set([normalized]);
+        const ruVariant = normalize(switchLayout(normalized, EN_TO_RU));
+        const enVariant = normalize(switchLayout(normalized, RU_TO_EN));
         if (ruVariant) variants.add(ruVariant);
         if (enVariant) variants.add(enVariant);
         return Array.from(variants);
@@ -75,21 +70,21 @@
         return aliasMap;
     }
 
+    function buildSearchText(entry) {
+        const parts = [
+            entry.title || '',
+            entry.desc || '',
+            ...(Array.isArray(entry.keywords) ? entry.keywords : [])
+        ];
+        return normalize(parts.join(' '));
+    }
+
     function buildEntryLookup(entries) {
         const lookup = {};
         Object.values(entries).forEach((entry) => {
-            const phraseSet = new Set();
-            const tokenSet = new Set();
-
-            (Array.isArray(entry.keywords) ? entry.keywords : []).forEach((keyword) => {
-                const phrase = normalize(keyword);
-                if (!phrase) return;
-                phraseSet.add(phrase);
-                tokenize(phrase).forEach((token) => tokenSet.add(token));
-            });
-
-            tokenize(entry.corpus || '').forEach((token) => tokenSet.add(token));
-            lookup[entry.id] = { phraseSet, tokenSet };
+            lookup[entry.id] = {
+                searchText: buildSearchText(entry)
+            };
         });
         return lookup;
     }
@@ -98,88 +93,100 @@
     const cardLookup = buildEntryLookup(cards);
     const sectionLookup = buildEntryLookup(sections);
 
-    function expandToken(token) {
+    function expandAliases(term) {
+        const normalizedTerm = normalize(term);
         const expanded = new Set();
-        tokenVariants(token).forEach((variant) => {
+        if (!normalizedTerm) return expanded;
+
+        layoutVariants(normalizedTerm).forEach((variant) => {
             expanded.add(variant);
             const aliases = aliasMap.get(variant);
             if (aliases) {
                 aliases.forEach((alias) => expanded.add(alias));
             }
         });
+
         return expanded;
+    }
+
+    function includesFragment(searchText, fragment) {
+        const normalizedFragment = normalize(fragment);
+        if (!normalizedFragment || normalizedFragment.length < MIN_QUERY_LEN) return false;
+        return layoutVariants(normalizedFragment).some(
+            (variant) => variant.length >= MIN_QUERY_LEN && searchText.includes(variant)
+        );
     }
 
     function buildQueryState(query) {
         const normalizedQuery = normalize(query);
         const rawTokens = tokenize(normalizedQuery);
-        const tokens = selectQueryTokens(rawTokens);
+        const meaningfulTokens = rawTokens.filter((token) => !STOP_TOKENS.has(token));
 
-        if (!tokens.length) {
+        if (!normalizedQuery || normalizedQuery.length < MIN_QUERY_LEN) {
             return {
                 hasQuery: false,
                 normalizedQuery,
-                tokenCandidates: [],
-                phraseCandidates: [],
-                prefixCandidates: []
+                rawTokens,
+                meaningfulTokens
             };
         }
 
-        const tokenCandidates = new Set();
-        const phraseCandidates = new Set();
-        const prefixSourceTokens = new Set();
-
-        if (normalizedQuery.includes(' ')) {
-            phraseCandidates.add(normalizedQuery);
-        }
-
-        tokens.forEach((token) => {
-            tokenVariants(token).forEach((variant) => {
-                const normalizedVariant = normalize(variant);
-                if (normalizedVariant) prefixSourceTokens.add(normalizedVariant);
-            });
-
-            expandToken(token).forEach((candidate) => {
-                const normalizedCandidate = normalize(candidate);
-                if (!normalizedCandidate) return;
-                if (normalizedCandidate.includes(' ')) {
-                    phraseCandidates.add(normalizedCandidate);
-                } else {
-                    tokenCandidates.add(normalizedCandidate);
-                }
-            });
-        });
-
         return {
-            hasQuery: tokenCandidates.size > 0 || phraseCandidates.size > 0,
+            hasQuery: true,
             normalizedQuery,
-            tokenCandidates: Array.from(tokenCandidates),
-            phraseCandidates: Array.from(phraseCandidates),
-            prefixCandidates: Array.from(prefixSourceTokens).filter(
-                (token) => token.length >= MIN_PREFIX_LEN && !STOP_TOKENS.has(token)
-            )
+            rawTokens,
+            meaningfulTokens: meaningfulTokens.length ? meaningfulTokens : rawTokens
         };
     }
 
     function entryMatches(entry, queryState) {
         if (!entry || !queryState.hasQuery) return true;
 
-        for (let i = 0; i < queryState.phraseCandidates.length; i += 1) {
-            if (entry.phraseSet.has(queryState.phraseCandidates[i])) return true;
+        const { searchText } = entry;
+        if (!searchText) return false;
+
+        if (includesFragment(searchText, queryState.normalizedQuery)) {
+            return true;
         }
 
-        for (let i = 0; i < queryState.tokenCandidates.length; i += 1) {
-            if (entry.tokenSet.has(queryState.tokenCandidates[i])) return true;
+        if (queryState.meaningfulTokens.length > 1) {
+            return queryState.meaningfulTokens.every((token) => includesFragment(searchText, token));
         }
 
-        for (let i = 0; i < queryState.prefixCandidates.length; i += 1) {
-            const prefix = queryState.prefixCandidates[i];
-            for (const token of entry.tokenSet) {
-                if (token.startsWith(prefix)) return true;
+        const [singleToken] = queryState.meaningfulTokens;
+        if (!singleToken) return false;
+
+        if (includesFragment(searchText, singleToken)) {
+            return true;
+        }
+
+        for (const aliasTerm of expandAliases(singleToken)) {
+            if (aliasTerm === singleToken) continue;
+            if (aliasTerm.length < MIN_ALIAS_TERM_LEN) continue;
+            if (!searchText.includes(aliasTerm)) continue;
+            if (aliasMatchesToken(singleToken, aliasTerm)) {
+                return true;
             }
         }
 
         return false;
+    }
+
+    function aliasMatchesToken(token, aliasTerm) {
+        if (aliasTerm.includes(' ')) {
+            return aliasTerm.includes(token);
+        }
+
+        const sharedPrefixLen = Math.min(4, token.length, aliasTerm.length);
+        if (sharedPrefixLen >= 3 && token.slice(0, sharedPrefixLen) === aliasTerm.slice(0, sharedPrefixLen)) {
+            return true;
+        }
+
+        if (token.length <= 4 && aliasTerm.length <= 4) {
+            return true;
+        }
+
+        return token.includes(aliasTerm) || aliasTerm.includes(token);
     }
 
     function cardIdFromElement(cardElement) {
@@ -218,12 +225,13 @@
                 const cardEntry = cardLookup[cardId];
                 if (cardEntry) return entryMatches(cardEntry, queryState);
 
-                const fallbackText = normalize(cardElement?.textContent || '');
-                const fallbackTokens = new Set(tokenize(fallbackText));
-                for (let i = 0; i < queryState.tokenCandidates.length; i += 1) {
-                    if (fallbackTokens.has(queryState.tokenCandidates[i])) return true;
-                }
-                return false;
+                const meta = cards[cardId];
+                const fallbackText = buildSearchText({
+                    title: cardElement?.querySelector('.card-title')?.textContent || meta?.title || '',
+                    desc: cardElement?.querySelector('.card-desc')?.textContent || meta?.desc || '',
+                    keywords: []
+                });
+                return entryMatches({ searchText: fallbackText }, queryState);
             }
         };
     }

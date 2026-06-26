@@ -6,38 +6,7 @@
     <title>ИТ-портал | Заявки и полезные сервисы</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="assets/favicon.svg">
-    <script>
-        (function () {
-            const storageKey = 'portal-theme';
-            const cookieName = storageKey + '=';
-
-            function readThemeCookie() {
-                const entries = document.cookie ? document.cookie.split('; ') : [];
-                for (let i = 0; i < entries.length; i += 1) {
-                    if (entries[i].indexOf(cookieName) === 0) {
-                        const value = entries[i].slice(cookieName.length);
-                        if (value === 'dark' || value === 'light') return value;
-                    }
-                }
-                return null;
-            }
-
-            try {
-                const stored = window.localStorage.getItem(storageKey);
-                const initial = stored === 'dark' || stored === 'light' ? stored : readThemeCookie();
-                if (initial) {
-                    document.documentElement.setAttribute('data-theme', initial);
-                    document.documentElement.setAttribute('data-user-theme', initial);
-                }
-            } catch (error) {
-                const fallback = readThemeCookie();
-                if (fallback) {
-                    document.documentElement.setAttribute('data-theme', fallback);
-                    document.documentElement.setAttribute('data-user-theme', fallback);
-                }
-            }
-        })();
-    </script>
+    <script src="js/portal-theme-init.js"></script>
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/background.css">
     <link rel="stylesheet" href="css/layout.css">
@@ -47,6 +16,7 @@
     <link rel="stylesheet" href="css/themes.css">
     <link rel="stylesheet" href="css/scrollbars.css">
     <link rel="stylesheet" href="css/modal.css">
+    <link rel="stylesheet" href="css/mobile.css">
     <script>
         (function () {
             function isPortalModalOpen() {
@@ -76,46 +46,32 @@
 </div>
 
 <div class="app-layout">
-    <aside class="sidebar-nav" aria-label="Навигация по разделам">
-        <div class="sidebar-nav__inner">
-            <div class="sidebar-nav__brand">
-                <button class="sidebar-nav__home-btn" id="sidebarHomeBtn" type="button" aria-label="На главную">
-                    <img src="assets/logo-21vek.svg" alt="">
-                </button>
-            </div>
-            <nav class="sidebar-nav__list" id="sidebarNavList" aria-label="Разделы портала"></nav>
-            <div class="sidebar-nav__footer">
-                <button id="sidebarResetPasswordBtn" class="reset-password-btn sidebar-reset-btn" type="button">Сбросить пароль</button>
-                <button class="theme-toggle" id="sidebarThemeToggle" type="button" aria-pressed="false" aria-label="Переключить тему">
-                    <span class="theme-toggle__icon" aria-hidden="true">🌙</span>
-                    <span class="theme-toggle__label">Тёмная тема</span>
-                </button>
-            </div>
-        </div>
-    </aside>
-
     <main class="main-content">
         <div class="container">
             <header class="header">
                 <div class="header-utility">
                     <div class="header-links">
-                        <a class="header-link-btn" href="https://wiki.company.ru" target="_blank" rel="noopener noreferrer">WIKI</a>
-                        <a class="header-link-btn" href="https://wiki.company.ru/learning" target="_blank" rel="noopener noreferrer">Обучение</a>
-                        <span class="header-link-btn header-link-btn--placeholder" aria-disabled="true" title="Раздел в разработке">FAQ</span>
-                        <span class="header-link-btn header-link-btn--placeholder" aria-disabled="true" title="Раздел в разработке">Регламенты</span>
+                        <div class="header-links__primary">
+                            <a class="header-link-btn" data-portal-link="wiki" href="https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/" target="_blank" rel="noopener noreferrer">WIKI</a>
+                            <a class="header-link-btn" data-portal-link="learning" href="https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/" target="_blank" rel="noopener noreferrer">Обучение</a>
+                            <span class="header-link-btn header-link-btn--placeholder" aria-disabled="true" title="Раздел в разработке">FAQ</span>
+                            <span class="header-link-btn header-link-btn--placeholder" aria-disabled="true" title="Раздел в разработке">Регламенты</span>
+                        </div>
+                        <button id="resetPasswordBtn" class="header-link-btn header-link-btn--reset" type="button">Сбросить пароль</button>
                     </div>
                 </div>
                 <div class="header-main-row">
                     <div class="header-main">
                         <button class="header-home-btn" id="homeTitleBtn" type="button">
                             <h1>ИТ-портал 21Vek</h1>
+                            <span class="header-department" id="portalTagline">IT-Support · 21VEK</span>
                         </button>
                         <p>Найдите нужный сервис и оформите ИТ-заявку за пару кликов.</p>
                     </div>
                     <div class="search-bar header-search-row">
                         <div class="search-field">
                             <input type="search" id="cardSearch" placeholder="Поиск..." aria-label="Поиск по услугам" autocomplete="off">
-                            <button class="search-field__clear" id="searchClearBtn" type="button" aria-label="Очистить поиск" hidden></button>
+                            <button class="search-field__clear" id="searchClearBtn" type="button" aria-label="Очистить поиск" aria-hidden="true" tabindex="-1"></button>
                         </div>
                         <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="Переключить тему">
                             <span class="theme-toggle__icon" aria-hidden="true">🌙</span>
@@ -127,7 +83,6 @@
 
             <nav class="section-nav" aria-label="Быстрый переход по разделам">
                 <div class="section-nav__chips" id="sectionNavChips"></div>
-                <button id="resetPasswordBtn" class="reset-password-btn header-reset-btn section-reset-btn" type="button">Сбросить пароль</button>
             </nav>
 
             <section class="search-empty-state hidden" id="searchEmptyState" role="status" aria-live="polite" aria-hidden="true">
@@ -318,7 +273,7 @@
                         <div class="card-icon">📋</div>
                         <div class="card-content">
                             <div class="card-title">Узнать, какое оборудование за мной числится</div>
-                            <div class="card-desc">CMDB: инвентарный учёт, закреплённая техника</div>
+                            <div class="card-desc">SMDB (Snipe-IT): инвентарный учёт, закреплённая техника</div>
                         </div>
                     </div>
                     <div class="service-card useful-card" data-useful="phonebook">
@@ -340,7 +295,7 @@
 
             <div class="footer-note" id="pageFooter">
                 <div class="footer-meta" aria-label="Контакты и служебная информация">
-                    <a class="footer-meta-link" href="mailto:itsupport@21vek.by">itsupport@21vek.by</a>
+                    <a class="footer-meta-link" data-support-mail data-mail-subject="ИТ-портал — обращение" href="mailto:itsupport@21vek.by">itsupport@21vek.by</a>
                     <span class="footer-meta-item">© 2026 IT Support 21vek</span>
                 </div>
                 <p class="footer-caption">Карточка открывает заявку, «Полезное» ведет на внешние сервисы.</p>
@@ -376,6 +331,10 @@
         </form>
     </div>
 </div>
+
+<button class="scroll-to-top" id="scrollToTopBtn" type="button" aria-label="Промотать вверх" aria-hidden="true">
+    <span class="scroll-to-top__icon" aria-hidden="true">↑</span>
+</button>
 
 <!-- Модальное окно для сброса пароля -->
 <div id="pwResetModal" class="modal-overlay" role="presentation" aria-hidden="true">

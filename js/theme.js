@@ -147,7 +147,7 @@
         const initial = getStoredTheme() || (defaultTheme === 'system' ? getSystemTheme() : defaultTheme);
         applyTheme(initial, { persist: true, animate: false });
 
-        document.querySelectorAll('#themeToggle, #sidebarThemeToggle').forEach(button => {
+        document.querySelectorAll('#themeToggle').forEach(button => {
             button.addEventListener('click', toggleTheme);
         });
 
