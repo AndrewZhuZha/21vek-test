@@ -1,73 +1,36 @@
-# Деплой ИТ-портала с авторизацией
+# Деплой в production
 
-Рекомендуемая production-схема: **Linux VM + nginx + Node.js**.
+Схема: **Linux VM + nginx + Node.js**. GitHub Pages не поддерживает OAuth backend.
 
-GitHub Pages **не поддерживает** OAuth backend (`/api/auth/*`).
-
----
-
-## 1. Выбор домена
-
-Примеры:
-
-| Среда | URL | Redirect URI в OAuth |
-|-------|-----|----------------------|
-| Dev | `http://localhost:3000` | `http://localhost:3000/api/auth/callback` |
-| Prod | `https://portal.21vek.by` | `https://portal.21vek.by/api/auth/callback` |
-
-`PUBLIC_URL` в `.env` должен **точно** совпадать с URL, который видят пользователи (без `/` в конце).
-
-После выбора prod-домена добавьте Redirect URI в [oauth.yandex.ru](https://oauth.yandex.ru/).
-
----
-
-## 2. Переменные окружения (production)
+## Переменные окружения
 
 ```env
 NODE_ENV=production
-YANDEX_CLIENT_ID=...
-YANDEX_CLIENT_SECRET=...
-SESSION_SECRET=...          # 32+ случайных символов
-SESSION_STORE=memory        # memory | redis
-SESSION_REDIS_URL=          # обязательно при SESSION_STORE=redis
-REQUEST_LOGGING=true        # structured request logs
+YANDEX_CLIENT_ID=
+YANDEX_CLIENT_SECRET=
+SESSION_SECRET=              # 32+ символов
+SESSION_STORE=memory         # memory | redis
+SESSION_REDIS_URL=           # при SESSION_STORE=redis
+REQUEST_LOGGING=true
 ALLOWED_EMAIL_DOMAIN=21vek.by
-TRACKER_DEMO_MODE=true      # false сейчас запрещён: prod Tracker API ещё не реализован
+TRACKER_DEMO_MODE=true       # false запрещён до реализации prod Tracker API
 GUEST_REQUEST_TYPES=
 PORT=3000
 PUBLIC_URL=https://portal.21vek.by
 ```
 
-Генерация `.env`: `node scripts/setup-auth-env.mjs`
+`PUBLIC_URL` = URL в браузере (без `/`). Redirect URI в [oauth.yandex.ru](https://oauth.yandex.ru/): `{PUBLIC_URL}/api/auth/callback`.
 
----
+Генерация `.env`: `npm run setup:auth`
 
-## 2.1 Индексация (intranet)
-
-По умолчанию портал закрыт от индексации:
-
-- `<meta name="robots" content="noindex,nofollow">` в `index.html`;
-- `robots.txt` с `Disallow: /`.
-
-Если портал должен индексироваться внешними поисковиками, пересмотрите эти настройки перед релизом.
-
----
-
-## 3. Docker (рекомендуется)
+## Docker
 
 ```bash
-# backend/.env заполнен
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+curl http://localhost:3000/api/health
 ```
 
-Проверка: `curl http://localhost:3000/api/health`
-
-`docker-compose.prod.yml` добавляет production overrides: `read_only`, `tmpfs=/tmp`, `no-new-privileges`, `cap_drop: [ALL]`, `init: true`.
-Контейнер запускается от non-root пользователя `node` (см. `Dockerfile`).
-
----
-
-## 4. nginx reverse proxy
+## nginx
 
 ```nginx
 server {
@@ -86,7 +49,6 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Доп. защита на уровне reverse proxy
     add_header X-Frame-Options "DENY" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
@@ -94,13 +56,9 @@ server {
 }
 ```
 
-При `NODE_ENV=production` cookie сессии получает флаг `Secure` (нужен HTTPS).
+Страницы ошибок: [errors/DEPLOY.md](../errors/DEPLOY.md).
 
----
-
-## 5. systemd (без Docker)
-
-Файл `/etc/systemd/system/portal-21vek.service`:
+## systemd (без Docker)
 
 ```ini
 [Unit]
@@ -115,46 +73,30 @@ Environment=NODE_ENV=production
 EnvironmentFile=/opt/21vek-test/backend/.env
 ExecStart=/usr/bin/node backend/src/index.js
 Restart=on-failure
-RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable portal-21vek
-sudo systemctl start portal-21vek
-```
-
----
-
-## 6. PM2 (альтернатива systemd)
-
-```bash
-cd /opt/21vek-test
-NODE_ENV=production pm2 start backend/src/index.js --name portal-21vek
-pm2 save
-pm2 startup
-```
-
----
-
-## 7. Проверка после деплоя
+## Проверка после деплоя
 
 ```bash
 curl -s https://portal.21vek.by/api/health
 curl -s https://portal.21vek.by/api/auth/config-check
-curl -s -X POST https://portal.21vek.by/api/tracker/issues -H "Content-Type: application/json" -d '{"requestType":"tech_support"}'
-node scripts/verify-auth-smoke.mjs   # PORTAL_URL=https://portal.21vek.by
+PORTAL_URL=https://portal.21vek.by npm run verify:auth
 ```
 
-Ручной чек-лист: [SMOKE-TESTS.md](SMOKE-TESTS.md) §10.
-Политики безопасности: [SECURITY.md](SECURITY.md).
-Production checklist: [PRODUCTION-CHECKLIST.md](PRODUCTION-CHECKLIST.md).
+Ручной чек-лист: [SMOKE-TESTS.md](SMOKE-TESTS.md).
 
----
+## Безопасность
 
-## 8. GitHub Pages preview
+- Заявки (`POST /api/tracker/*`) и logout — только с сессией @21vek.by.
+- CSRF-проверка Origin/Referer, rate limiting, helmet/CSP, cookie `httpOnly` + `Secure` + `sameSite`.
+- OAuth token не хранится в сессии; `session.regenerate()` после login.
+- `backend/.env` на сервере, права `600`, не в git.
+- `YANDEX_OAUTH_TLS_INSECURE=true` блокируется при `NODE_ENV=production`.
+- Портал закрыт от индексации: `robots.txt`, `<meta robots noindex>`.
 
-Ветка `testing-cursor` деплоится как **статика** без backend. CI автоматически подключает `js/config.preview.js` (`auth.enabled: false`).
+## GitHub Pages preview
+
+Ветка `testing-cursor` — статика без backend (`auth.enabled: false` через `config.preview.js`).
