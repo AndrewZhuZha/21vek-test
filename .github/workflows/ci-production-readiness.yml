@@ -1,0 +1,62 @@
+name: CI Production Readiness
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start backend
+        run: |
+          npm start > /tmp/portal.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/portal.log
+          exit 1
+
+      - name: Production smoke checks
+        run: PORTAL_URL=http://127.0.0.1:3000 npm run verify:prod
+
+      - name: Install Chromium
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser || sudo apt-get install -y chromium
+          if command -v chromium-browser >/dev/null; then
+            echo "CHROME_BIN=$(command -v chromium-browser)" >> "$GITHUB_ENV"
+          elif command -v chromium >/dev/null; then
+            echo "CHROME_BIN=$(command -v chromium)" >> "$GITHUB_ENV"
+          else
+            echo "Chromium binary not found"
+            exit 1
+          fi
+
+      - name: Accessibility smoke (axe)
+        env:
+          A11Y_URL: http://127.0.0.1:3000/
+          A11Y_REQUIRED: "true"
+        run: npm run verify:a11y
+
+      - name: Dependency audit (root + backend)
+        run: npm run audit:deps

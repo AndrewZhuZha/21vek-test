@@ -28,8 +28,11 @@ NODE_ENV=production
 YANDEX_CLIENT_ID=...
 YANDEX_CLIENT_SECRET=...
 SESSION_SECRET=...          # 32+ случайных символов
+SESSION_STORE=memory        # memory | redis
+SESSION_REDIS_URL=          # обязательно при SESSION_STORE=redis
+REQUEST_LOGGING=true        # structured request logs
 ALLOWED_EMAIL_DOMAIN=21vek.by
-TRACKER_DEMO_MODE=true
+TRACKER_DEMO_MODE=true      # false сейчас запрещён: prod Tracker API ещё не реализован
 GUEST_REQUEST_TYPES=
 PORT=3000
 PUBLIC_URL=https://portal.21vek.by
@@ -39,14 +42,28 @@ PUBLIC_URL=https://portal.21vek.by
 
 ---
 
+## 2.1 Индексация (intranet)
+
+По умолчанию портал закрыт от индексации:
+
+- `<meta name="robots" content="noindex,nofollow">` в `index.html`;
+- `robots.txt` с `Disallow: /`.
+
+Если портал должен индексироваться внешними поисковиками, пересмотрите эти настройки перед релизом.
+
+---
+
 ## 3. Docker (рекомендуется)
 
 ```bash
 # backend/.env заполнен
-docker compose up -d --build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
 Проверка: `curl http://localhost:3000/api/health`
+
+`docker-compose.prod.yml` добавляет production overrides: `read_only`, `tmpfs=/tmp`, `no-new-privileges`, `cap_drop: [ALL]`, `init: true`.
+Контейнер запускается от non-root пользователя `node` (см. `Dockerfile`).
 
 ---
 
@@ -134,6 +151,7 @@ node scripts/verify-auth-smoke.mjs   # PORTAL_URL=https://portal.21vek.by
 
 Ручной чек-лист: [SMOKE-TESTS.md](SMOKE-TESTS.md) §10.
 Политики безопасности: [SECURITY.md](SECURITY.md).
+Production checklist: [PRODUCTION-CHECKLIST.md](PRODUCTION-CHECKLIST.md).
 
 ---
 

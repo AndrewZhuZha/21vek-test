@@ -6,6 +6,23 @@
 import http from 'node:http';
 
 const baseUrl = new URL(process.env.PORTAL_URL || 'http://localhost:3000');
+const loopbackHosts = new Set(['localhost', '127.0.0.1']);
+
+function isLoopbackRedirectMatch(actual, expected) {
+    try {
+        const actualUrl = new URL(actual);
+        const expectedUrl = new URL(expected);
+        return (
+            actualUrl.protocol === expectedUrl.protocol &&
+            actualUrl.port === expectedUrl.port &&
+            actualUrl.pathname === expectedUrl.pathname &&
+            loopbackHosts.has(actualUrl.hostname) &&
+            loopbackHosts.has(expectedUrl.hostname)
+        );
+    } catch {
+        return false;
+    }
+}
 
 function request(path, options = {}) {
     return new Promise((resolve, reject) => {
@@ -67,6 +84,10 @@ console.log(`\nAuth smoke tests → ${baseUrl}\n`);
 try {
     const health = await request('/api/health');
     check(health.status === 200 && health.body?.ok === true, 'GET /api/health → 200 ok');
+    check(
+        typeof health.headers['x-request-id'] === 'string' && health.headers['x-request-id'].length >= 8,
+        'GET /api/health возвращает X-Request-Id'
+    );
 
     const config = await request('/api/auth/config-check');
     check(config.status === 200, 'GET /api/auth/config-check → 200');
@@ -75,7 +96,17 @@ try {
         'config-check содержит configured'
     );
     check(
-        !config.body?.redirectUri || config.body?.redirectUri === `${baseUrl.origin}/api/auth/callback`,
+        Array.isArray(config.body?.guestRequestTypes),
+        'config-check содержит guestRequestTypes'
+    );
+    check(
+        typeof config.body?.trackerDemoMode === 'boolean',
+        'config-check содержит trackerDemoMode'
+    );
+    check(
+        !config.body?.redirectUri ||
+        config.body?.redirectUri === `${baseUrl.origin}/api/auth/callback` ||
+        isLoopbackRedirectMatch(config.body?.redirectUri, `${baseUrl.origin}/api/auth/callback`),
         'redirectUri совпадает с PUBLIC_URL',
         config.body?.redirectUri
     );
@@ -104,6 +135,33 @@ try {
     });
     check(trackerUnauth.status === 401, 'POST /api/tracker/issues без сессии → 401');
 
+    const resetUnauth = await request('/api/tracker/password-reset', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Origin: baseUrl.origin
+        },
+        body: JSON.stringify({
+            target: 'Тест',
+            requester: 'Тест',
+            reason: 'Smoke test'
+        })
+    });
+    check(resetUnauth.status === 401, 'POST /api/tracker/password-reset без сессии → 401');
+
+    const logoutLoopback = await request('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+            Accept: 'application/json',
+            Origin: 'http://127.0.0.1:3000'
+        }
+    });
+    check(
+        logoutLoopback.status === 200,
+        'POST /api/auth/logout с Origin 127.0.0.1 → 200 (dev loopback CSRF)',
+        logoutLoopback.body?.message || logoutLoopback.status
+    );
+
     const login = await request('/api/auth/login');
     if (config.body?.configured) {
         const location = login.headers.location || '';
@@ -117,10 +175,46 @@ try {
 
     const index = await request('/');
     check(index.status === 200, 'GET / → 200 (статика)');
+    check(
+        String(index.headers['cache-control'] || '').includes('no-store'),
+        'GET / отдаёт Cache-Control: no-store'
+    );
 
     const gateHtml = String(index.body || '');
     check(gateHtml.includes('portalAuthGate'), 'index.html содержит login gate');
-    check(gateHtml.includes('js/auth/index.js'), 'index.html подключает auth/index.js');
+    check(gateHtml.includes('/js/auth/index.js'), 'index.html подключает /js/auth/index.js');
+    check(gateHtml.includes('name="description"'), 'index.html содержит meta description');
+    check(gateHtml.includes('name="robots" content="noindex,nofollow"'), 'index.html содержит robots noindex');
+    check(
+        gateHtml.includes('rel="preconnect" href="https://avatars.yandex.net"'),
+        'index.html содержит preconnect для avatars.yandex.net'
+    );
+
+    const robots = await request('/robots.txt');
+    const robotsBody = String(robots.body || '');
+    check(robots.status === 200, 'GET /robots.txt → 200');
+    check(robotsBody.includes('Disallow: /'), 'robots.txt запрещает индексацию');
+
+    const styleCss = await request('/css/style.css');
+    check(styleCss.status === 200, 'GET /css/style.css → 200');
+    check(
+        String(styleCss.headers['cache-control'] || '').includes('max-age=3600'),
+        'GET /css/style.css отдаёт cache-control для статики'
+    );
+
+    const deepUnknown = await request('/qa/non-existent/path');
+    const deepUnknownHtml = String(deepUnknown.body || '');
+    check(deepUnknown.status === 404, 'GET /qa/non-existent/path → 404');
+    check(deepUnknownHtml.includes('Страница не найдена'), '404-страница содержит заголовок ошибки');
+    check(deepUnknownHtml.includes('/css/errors.css'), '404-страница использует абсолютные пути ассетов');
+
+    const missingCss = await request('/css/not-found.css');
+    check(missingCss.status === 404, 'GET /css/not-found.css → 404');
+    check(String(missingCss.body || '').trim() === 'Not found', 'GET /css/not-found.css возвращает короткий текст 404');
+    check(
+        String(missingCss.headers['content-type'] || '').includes('text/plain'),
+        'GET /css/not-found.css возвращает text/plain'
+    );
 } catch (error) {
     ok = false;
     console.error(`\n✗ Сервер недоступен (${baseUrl.origin}). Запустите: npm start\n`, error.message);

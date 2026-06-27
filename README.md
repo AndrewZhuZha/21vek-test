@@ -49,6 +49,9 @@ window.PortalConfigLocal = { auth: { enabled: false } };
 npm run build          # поиск + страницы ошибок
 npm run build:search   # js/search-index.js, js/request-types.js
 npm run build:errors   # errors/*.html
+npm run verify:prod    # build + auth/routes smoke
+npm run verify:a11y    # axe smoke (нужен Chrome/Chromium или CHROME_BIN)
+npm run audit:deps     # npm audit root + backend
 ```
 
 После правок `data/request-types.json` или `data/search.overrides.json` — пересобрать search.
@@ -58,7 +61,7 @@ npm run build:errors   # errors/*.html
 ## Настройка
 
 - [js/config.js](js/config.js) — базовый конфиг
-- [js/config.local.js](js/config.local.js) — переопределения среды (шаблон: [js/config.local.example.js](js/config.local.example.js))
+- [js/config.local.js](js/config.local.js) — переопределения среды (шаблон: [js/config.local.example.js](js/config.local.example.js), не хранить секреты)
 
 Новая услуга: карточка в `index.html` → запись в `data/request-types.json` → `npm run build:search`.
 
@@ -69,6 +72,7 @@ npm run build:errors   # errors/*.html
 - [docs/DEPLOY.md](docs/DEPLOY.md) — production: Docker, nginx, systemd
 - [docs/SECURITY.md](docs/SECURITY.md) — политики безопасности и hardening
 - [docs/SMOKE-TESTS.md](docs/SMOKE-TESTS.md) — чек-лист перед релизом
+- [docs/PRODUCTION-CHECKLIST.md](docs/PRODUCTION-CHECKLIST.md) — 120 пунктов готовности к production
 - [docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md) — открытый backlog
 
 ## Контакты
