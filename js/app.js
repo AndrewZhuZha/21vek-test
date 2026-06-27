@@ -606,8 +606,9 @@ function initPortalApp(config) {
         }
     });
 
-    document.querySelectorAll('.service-card:not(.useful-card)').forEach(card => {
+    document.querySelectorAll('.service-card:not(.useful-card):not(.password-reset-card)').forEach(card => {
         card.addEventListener('click', () => {
+            clearGlobalNotice();
             const reqType = card.getAttribute('data-request-type');
             if (reqType && requestMap[reqType]) {
                 openTaskModal(reqType);
@@ -619,6 +620,7 @@ function initPortalApp(config) {
 
     document.querySelectorAll('.useful-card').forEach(card => {
         card.addEventListener('click', () => {
+            clearGlobalNotice();
             const useful = card.getAttribute('data-useful');
             const url = usefulLinks[useful];
             if (url) {
@@ -626,6 +628,26 @@ function initPortalApp(config) {
             }
         });
     });
+
+    const reportBugBtn = document.getElementById('reportBugBtn');
+    if (reportBugBtn) {
+        reportBugBtn.addEventListener('click', () => {
+            clearGlobalNotice();
+            const bugRequestType = 'software_issues';
+            if (!requestMap[bugRequestType]) {
+                showGlobalError('Тип заявки "Сбои и ошибки ПО" временно не настроен. Обратитесь в IT Support.');
+                return;
+            }
+            openTaskModal(bugRequestType);
+            if (summaryInput && !summaryInput.value.trim()) {
+                summaryInput.value = 'Сообщение о баге: ';
+                if (typeof summaryInput.setSelectionRange === 'function') {
+                    const pos = summaryInput.value.length;
+                    summaryInput.setSelectionRange(pos, pos);
+                }
+            }
+        });
+    }
 
     setupModal(modalOverlay, { onClose: resetTaskModalState, onCloseButtonClick: handleCancelClick });
     cancelBtn.addEventListener('click', handleCancelClick);

@@ -27,9 +27,11 @@ export function createOAuthState() {
 }
 
 /**
+ * @param {string} state
+ * @param {{ forceConfirm?: boolean }} [options]
  * @returns {string}
  */
-export function buildAuthorizeUrl(state) {
+export function buildAuthorizeUrl(state, options = {}) {
     const params = new URLSearchParams({
         response_type: 'code',
         client_id: config.yandexClientId,
@@ -37,6 +39,11 @@ export function buildAuthorizeUrl(state) {
         scope: getOAuthScopes().join(' '),
         state
     });
+
+    if (options.forceConfirm !== false) {
+        params.set('force_confirm', 'yes');
+    }
+
     return `${YANDEX_AUTHORIZE_URL}?${params.toString()}`;
 }
 

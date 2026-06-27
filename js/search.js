@@ -190,7 +190,7 @@
     }
 
     function cardIdFromElement(cardElement) {
-        return cardElement?.dataset?.requestType || cardElement?.dataset?.useful || '';
+        return cardElement?.dataset?.requestType || cardElement?.dataset?.useful || cardElement?.dataset?.action || '';
     }
 
     function collectMatchedSectionIds(queryState) {

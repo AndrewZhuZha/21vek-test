@@ -41,11 +41,22 @@
         <span class="theme-toggle__label">Тема</span>
     </button>
     <div class="portal-auth-gate__panel">
-        <img src="/assets/logo-21vek.svg" class="portal-auth-gate__logo" alt="" aria-hidden="true" width="140" height="50">
-        <h1 class="portal-auth-gate__title" id="portalAuthGateTitle">IT-Support · 21VEK</h1>
-        <p class="portal-auth-gate__desc">Войдите корпоративной учётной записью Яндекс (@21vek.by), чтобы продолжить.</p>
-        <p id="portalAuthGateError" class="portal-auth-gate__error hidden" role="alert"></p>
-        <button type="button" id="portalAuthLoginBtn" class="btn-primary portal-auth-gate__btn">Войти через Яндекс</button>
+        <img src="/assets/logo-21vek.svg" class="portal-auth-gate__logo" alt="21VEK" width="140" height="50">
+        <div id="portalAuthGateStepIntro" class="portal-auth-gate__step">
+            <h1 class="portal-auth-gate__title" id="portalAuthGateTitle">IT-Support · 21VEK</h1>
+            <p class="portal-auth-gate__desc">Войдите корпоративной учётной записью Яндекс (@21vek.by), чтобы продолжить.</p>
+            <p id="portalAuthGateError" class="portal-auth-gate__error hidden" role="alert"></p>
+            <button type="button" id="portalAuthLoginBtn" class="btn-primary portal-auth-gate__btn">Войти через Яндекс</button>
+        </div>
+        <div id="portalAuthGateStepConfirm" class="portal-auth-gate__step hidden" aria-labelledby="portalAuthGateConfirmTitle">
+            <h2 class="portal-auth-gate__subtitle" id="portalAuthGateConfirmTitle">Выбор учётной записи</h2>
+            <p class="portal-auth-gate__desc">На следующем шаге откроется Яндекс ID. Выберите корпоративный аккаунт <strong>@21vek.by</strong> или войдите под нужной учётной записью.</p>
+            <div class="portal-auth-gate__actions">
+                <button type="button" id="portalAuthConfirmBtn" class="btn-primary portal-auth-gate__btn">Продолжить на Яндекс</button>
+                <button type="button" id="portalAuthBackBtn" class="portal-auth-gate__back">Назад</button>
+            </div>
+        </div>
+        <p class="portal-auth-gate__notice">Без корпоративной учётной записи <strong>@21vek.by</strong> обратиться через портал не получится.</p>
     </div>
 </div>
 <div id="portalGlobalNotice" class="portal-global-notice hidden" role="alert" aria-live="assertive" aria-atomic="true"></div>
@@ -68,7 +79,6 @@
                         </div>
                         <div class="header-links__actions">
                             <button id="tourReplayBtn" class="header-link-btn header-link-btn--tour" type="button">Показать тур</button>
-                            <button id="resetPasswordBtn" class="header-link-btn header-link-btn--reset" type="button">Сбросить пароль</button>
                             <button class="theme-toggle header-theme-toggle hidden" id="themeToggleHeader" type="button" aria-pressed="false" aria-label="Переключить тему">
                                 <span class="theme-toggle__icon" aria-hidden="true">🌙</span>
                                 <span class="theme-toggle__label">Тема</span>
@@ -80,7 +90,7 @@
                     <div class="header-main">
                         <button class="header-home-btn" id="homeTitleBtn" type="button">
                             <span class="header-brand">
-                                <img src="/assets/logo-21vek.svg" class="header-brand__logo" alt="" aria-hidden="true" width="112" height="40">
+                                <img src="/assets/logo-21vek.svg" class="header-brand__logo" alt="21VEK" width="112" height="40">
                                 <h1 id="portalTagline">IT-Support · 21VEK</h1>
                             </span>
                         </button>
@@ -206,7 +216,7 @@
                         <div class="card-icon">✏️</div>
                         <div class="card-content">
                             <div class="card-title">Изменение сотрудника</div>
-                            <div class="card-desc">Смена должности, отдела, ФИО, прав доступа</div>
+                            <div class="card-desc">Кадровые изменения сотрудника: должность, отдел, ФИО, штатная роль</div>
                         </div>
                     </button>
                     <button type="button" class="service-card" data-request-type="org_structure" data-title="Изменение орг. структуры">
@@ -219,7 +229,28 @@
                 </div>
             </section>
 
-            <!-- 4. Серверное / сетевое оборудование -->
+            <!-- 4. Учётная запись -->
+            <section class="section-group" id="section-account" data-section-id="section-account">
+                <div class="group-title"><span>🔑</span> <span>Учётная запись</span></div>
+                <div class="cards-grid">
+                    <button type="button" class="service-card password-reset-card" id="resetPasswordBtn" data-action="password-reset" data-title="Сброс пароля">
+                        <div class="card-icon">🔑</div>
+                        <div class="card-content">
+                            <div class="card-title">Сброс пароля</div>
+                            <div class="card-desc">Если сотрудник не может войти в корпоративную учётную запись.</div>
+                        </div>
+                    </button>
+                    <button type="button" class="service-card" data-request-type="account_access" data-title="Доступ к сервисам и системам">
+                        <div class="card-icon">👤</div>
+                        <div class="card-content">
+                            <div class="card-title">Доступ к сервисам и системам</div>
+                            <div class="card-desc">Для руководителей: запрос или изменение прав к камерам, видеонаблюдению, 1С, Битрикс, почте и папкам (без кадровых изменений).</div>
+                        </div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 5. Серверное / сетевое оборудование -->
             <section class="section-group" id="section-servers" data-section-id="section-servers">
                 <div class="group-title"><span>🌐</span> <span>Серверное и сетевое оборудование</span></div>
                 <div class="cards-grid">
@@ -240,7 +271,7 @@
                 </div>
             </section>
 
-            <!-- 5. СКУД / Видеонаблюдение -->
+            <!-- 6. СКУД / Видеонаблюдение -->
             <section class="section-group" id="section-skud" data-section-id="section-skud">
                 <div class="group-title"><span>📹</span> <span>СКУД и видеонаблюдение</span></div>
                 <div class="cards-grid">
@@ -268,7 +299,7 @@
                 </div>
             </section>
 
-            <!-- 6. Принтеры -->
+            <!-- 7. Принтеры -->
             <section class="section-group" id="section-printers" data-section-id="section-printers">
                 <div class="group-title"><span>🖨️</span> <span>Принтеры и МФУ</span></div>
                 <div class="cards-grid">
@@ -289,7 +320,7 @@
                 </div>
             </section>
 
-            <!-- 7. Другие вопросы -->
+            <!-- 8. Другие вопросы -->
             <section class="section-group" id="section-other" data-section-id="section-other">
                 <div class="group-title"><span>📌</span> <span>Другие вопросы</span></div>
                 <div class="cards-grid">
@@ -310,7 +341,7 @@
                 </div>
             </section>
 
-            <!-- 8. Полезное -->
+            <!-- 9. Полезное -->
             <section class="section-group" id="usefulSection" data-section-id="usefulSection">
                 <div class="group-title"><span>🎯</span> <span>Полезное</span></div>
                 <div class="cards-grid">
@@ -339,14 +370,16 @@
             </section>
 
             <div class="footer-note" id="pageFooter">
-                <div class="footer-meta" aria-label="Контакты и служебная информация">
-                    <a class="footer-meta-link" data-support-mail data-mail-subject="ИТ-портал — обращение" href="mailto:itsupport@21vek.by">itsupport@21vek.by</a>
-                    <span class="footer-meta-item">© 2026 IT Support 21vek</span>
+                <div class="footer-topline">
+                    <div class="footer-meta" aria-label="Контакты и служебная информация">
+                        <a class="footer-meta-link" data-support-mail data-mail-subject="ИТ-портал — обращение" href="mailto:itsupport@21vek.by">itsupport@21vek.by</a>
+                        <button id="reportBugBtn" class="footer-meta-link footer-meta-link--button" type="button">Сообщить о баге</button>
+                        <span class="footer-meta-item">© 2026 IT Support 21vek</span>
+                    </div>
+                    <p class="footer-stats hidden" id="portalRequestStats" aria-live="polite">
+                        Заявок через портал: <span class="footer-stats__value" id="portalRequestStatsValue">0</span>
+                    </p>
                 </div>
-                <p class="footer-stats hidden" id="portalRequestStats" aria-live="polite">
-                    Заявок через портал: <span class="footer-stats__value" id="portalRequestStatsValue">0</span>
-                </p>
-                <p class="footer-caption">Карточка открывает заявку, «Полезное» ведет на внешние сервисы.</p>
             </div>
         </div>
     </main>

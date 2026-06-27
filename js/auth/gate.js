@@ -30,13 +30,38 @@
     }
 
     const gate = document.getElementById('portalAuthGate');
+    const stepIntro = document.getElementById('portalAuthGateStepIntro');
+    const stepConfirm = document.getElementById('portalAuthGateStepConfirm');
     const loginBtn = document.getElementById('portalAuthLoginBtn');
+    const confirmBtn = document.getElementById('portalAuthConfirmBtn');
+    const backBtn = document.getElementById('portalAuthBackBtn');
     const errorEl = document.getElementById('portalAuthGateError');
     const backendUnavailableMessage = 'Сервис авторизации временно недоступен. Попробуйте обновить страницу через минуту.';
+
+    function showIntroStep() {
+        if (stepIntro) stepIntro.classList.remove('hidden');
+        if (stepConfirm) stepConfirm.classList.add('hidden');
+        if (loginBtn && typeof loginBtn.focus === 'function') {
+            requestAnimationFrame(() => {
+                loginBtn.focus();
+            });
+        }
+    }
+
+    function showConfirmStep() {
+        if (stepIntro) stepIntro.classList.add('hidden');
+        if (stepConfirm) stepConfirm.classList.remove('hidden');
+        if (confirmBtn && typeof confirmBtn.focus === 'function') {
+            requestAnimationFrame(() => {
+                confirmBtn.focus();
+            });
+        }
+    }
 
     function showGate() {
         clearAuthPending();
         concealPortal();
+        showIntroStep();
         if (gate) gate.classList.remove('hidden');
         if (appLayout) appLayout.setAttribute('aria-hidden', 'true');
         document.body.classList.add('portal-auth-gated');
@@ -88,7 +113,20 @@
 
     if (loginBtn) {
         loginBtn.addEventListener('click', () => {
+            clearAuthError();
+            showConfirmStep();
+        });
+    }
+
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', () => {
             window.PortalAuth.login();
+        });
+    }
+
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            showIntroStep();
         });
     }
 

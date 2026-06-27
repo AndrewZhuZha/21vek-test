@@ -7,6 +7,7 @@ window.PortalConfig = {
         { id: 'section-support', label: 'Техподдержка', icon: '🆘' },
         { id: 'section-equipment', label: 'Оборудование', icon: '💻' },
         { id: 'section-hr', label: 'HR', icon: '👥' },
+        { id: 'section-account', label: 'Учётная запись', icon: '🔑' },
         { id: 'section-servers', label: 'Серверы и сеть', icon: '🌐' },
         { id: 'section-skud', label: 'СКУД', icon: '📹' },
         { id: 'section-printers', label: 'Принтеры', icon: '🖨️' },

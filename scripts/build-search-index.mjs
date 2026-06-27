@@ -92,7 +92,8 @@ function parseIndexCards(indexSource) {
             const attrs = parseAttributes(cardMatch[1]);
             const requestType = attrs['data-request-type'] || '';
             const usefulKey = attrs['data-useful'] || '';
-            const cardId = requestType || usefulKey;
+            const action = attrs['data-action'] || '';
+            const cardId = requestType || usefulKey || action;
             if (cardId) {
                 cards.push({
                     id: cardId,
@@ -173,7 +174,9 @@ async function build() {
         const requestInfo = card.requestType ? requestMap[card.requestType] : null;
         const overrideKeywords = card.requestType
             ? (overrides.cards?.[card.requestType]?.keywords || [])
-            : (overrides.useful?.[card.usefulKey]?.keywords || []);
+            : card.usefulKey
+                ? (overrides.useful?.[card.usefulKey]?.keywords || [])
+                : (overrides.actions?.[card.id]?.keywords || []);
 
         const sectionOverrideKeywords = overrides.sections?.[card.sectionId]?.keywords || [];
 
@@ -190,7 +193,7 @@ async function build() {
         cards[card.id] = {
             id: card.id,
             sectionId: card.sectionId,
-            kind: card.requestType ? 'request' : 'useful',
+            kind: card.requestType ? 'request' : (card.usefulKey ? 'useful' : 'action'),
             requestType: card.requestType,
             usefulKey: card.usefulKey,
             title: card.title,

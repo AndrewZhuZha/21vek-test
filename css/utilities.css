@@ -48,6 +48,34 @@
     font-size: var(--text-sm);
     line-height: 1.4;
     box-shadow: var(--shadow-strong);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.portal-global-notice__message {
+    flex: 1;
+}
+
+.portal-global-notice__close {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0.1rem 0.3rem;
+    border-radius: 8px;
+    opacity: 0.78;
+}
+
+.portal-global-notice__close:hover,
+.portal-global-notice__close:focus-visible {
+    opacity: 1;
+    outline: none;
+    background: color-mix(in srgb, var(--surface-muted, #e2e8f0) 86%, transparent);
 }
 
 .portal-global-notice--error {
