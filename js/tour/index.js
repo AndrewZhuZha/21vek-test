@@ -26,6 +26,17 @@
         document.dispatchEvent(new CustomEvent(name, { detail: detail || {} }));
     }
 
+    function isTourAllowed() {
+        const auth = window.PortalAuth;
+        if (!auth?.isEnabled?.()) {
+            return true;
+        }
+        if (!auth.isRequired?.()) {
+            return true;
+        }
+        return Boolean(auth.isAuthenticated?.());
+    }
+
     function getUrlTourParam() {
         try {
             return new URLSearchParams(window.location.search).get('tour');
@@ -74,6 +85,9 @@
             button.textContent = tourConfig.replayButtonLabel;
         }
         button.addEventListener('click', () => {
+            if (!isTourAllowed()) {
+                return;
+            }
             stopRunning();
             start({ force: true });
         });
@@ -161,6 +175,9 @@
 
     function start(options) {
         const opts = options || {};
+        if (!isTourAllowed()) {
+            return;
+        }
         if (running) {
             if (!opts.force) return;
             stopRunning();
@@ -195,7 +212,11 @@
         return storage.isCompleted();
     }
 
-    function initAutoStart() {
+    function tryAutoStart() {
+        if (!isTourAllowed()) {
+            return;
+        }
+
         const urlParam = getUrlTourParam();
         if (urlParam === 'reset' || urlParam === '1') {
             start({ force: true });
@@ -204,6 +225,23 @@
         if (tourConfig.autoStart && !storage.isCompleted()) {
             window.requestAnimationFrame(() => start());
         }
+    }
+
+    function initAutoStart() {
+        const auth = window.PortalAuth;
+        if (auth?.isEnabled?.() && auth.isRequired?.()) {
+            document.addEventListener('portal:auth-required', () => {
+                stopRunning();
+            });
+            auth.whenReady().then((user) => {
+                if (user) {
+                    tryAutoStart();
+                }
+            });
+            return;
+        }
+
+        tryAutoStart();
     }
 
     window.PortalTour = {

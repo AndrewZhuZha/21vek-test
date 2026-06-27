@@ -24,13 +24,33 @@ function getAuthPrefillName() {
 }
 
 function initPortalApp(config) {
-    const { trackerQueue, twoStepRequestTypes, usefulLinks, externalLinks, demoMode } = config;
+    const { trackerQueue, twoStepRequestTypes, usefulLinks, externalLinks } = config;
 
+    function markDecorativeIcons() {
+        document.querySelectorAll('.group-title > span:first-child, .card-icon, .scroll-to-top__icon')
+            .forEach((node) => {
+                node.setAttribute('aria-hidden', 'true');
+            });
+    }
+
+    const portalLinks = {};
     document.querySelectorAll('[data-portal-link]').forEach(link => {
         const key = link.getAttribute('data-portal-link');
+        if (key) {
+            portalLinks[key] = link;
+        }
         const url = externalLinks?.[key];
         if (url) link.setAttribute('href', url);
     });
+
+    const wikiUrl = String(externalLinks?.wiki || '').trim();
+    const learningUrl = String(externalLinks?.learning || '').trim();
+    if (wikiUrl && learningUrl && wikiUrl === learningUrl && portalLinks.learning) {
+        portalLinks.learning.hidden = true;
+        portalLinks.learning.setAttribute('aria-hidden', 'true');
+    }
+
+    markDecorativeIcons();
 
     const taglineEl = document.getElementById('portalTagline');
     if (taglineEl && config.portalTagline) {
@@ -43,7 +63,20 @@ function initPortalApp(config) {
         link.setAttribute('href', `mailto:${email}?subject=${encodeURIComponent(subject)}`);
     });
     const { open: openModal, close: closeModalOverlay, setup: setupModal } = window.PortalModal;
-    const { showError, showNotice, clearError, requireValue, showGlobalError } = window.PortalForm;
+    const {
+        showError,
+        showNotice,
+        clearError,
+        requireValue,
+        showGlobalError,
+        showGlobalNotice,
+        clearGlobalNotice
+    } = window.PortalForm;
+
+    clearGlobalNotice();
+    if (config.demoMode) {
+        showGlobalNotice('Портал работает в демо-режиме: заявки не отправляются в production Tracker.');
+    }
 
     const requestMap = window.PortalRequestTypes || {};
     if (!Object.keys(requestMap).length) {

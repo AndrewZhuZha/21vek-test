@@ -53,12 +53,17 @@
     function updateToggleButton(button, theme) {
         const isDark = theme === 'dark';
         button.setAttribute('aria-pressed', String(isDark));
-        button.setAttribute('aria-disabled', String(isSwitching));
-        button.disabled = isSwitching;
+        button.setAttribute('aria-busy', String(isSwitching));
         const icon = button.querySelector('.theme-toggle__icon');
         const label = button.querySelector('.theme-toggle__label');
         if (icon) icon.textContent = isDark ? '☀️' : '🌙';
         if (label) label.textContent = isDark ? 'Светлая тема' : 'Тёмная тема';
+    }
+
+    function notifyThemeSwitching(active) {
+        document.dispatchEvent(new CustomEvent('portal:theme-switching', {
+            detail: { active: Boolean(active) }
+        }));
     }
 
     function updateButtons(theme) {
@@ -76,6 +81,7 @@
         root.classList.remove('theme-animating');
         root.classList.remove('theme-switching');
         updateButtons(theme);
+        notifyThemeSwitching(false);
         document.dispatchEvent(new CustomEvent('portal:theme-changed', { detail: { theme } }));
     }
 
@@ -101,6 +107,7 @@
 
         if (isSwitching) return;
         isSwitching = true;
+        notifyThemeSwitching(true);
         updateButtons(getTheme());
         root.classList.add('theme-switching');
 
@@ -147,8 +154,13 @@
         const initial = getStoredTheme() || (defaultTheme === 'system' ? getSystemTheme() : defaultTheme);
         applyTheme(initial, { persist: true, animate: false });
 
-        document.querySelectorAll('#themeToggle').forEach(button => {
-            button.addEventListener('click', toggleTheme);
+        document.querySelectorAll('.theme-toggle').forEach(button => {
+            if (button.dataset.themeBound === 'true') return;
+            button.dataset.themeBound = 'true';
+            button.addEventListener('click', (event) => {
+                event.stopPropagation();
+                toggleTheme();
+            });
         });
 
         window.addEventListener('storage', event => {

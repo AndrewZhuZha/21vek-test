@@ -72,13 +72,14 @@ function renderPage(error) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${error.code} — ${error.title} | ИТ-портал 21Vek</title>
-    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-    <script src="../js/portal-theme-init.js"></script>
-    <link rel="stylesheet" href="../css/variables.css">
-    <link rel="stylesheet" href="../css/background.css">
-    <link rel="stylesheet" href="../css/errors.css">
-    <link rel="stylesheet" href="../css/style.css">
+    <meta name="robots" content="noindex,nofollow">
+    <title>${error.code} — ${error.title} | ${portalBrand}</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <script src="/js/portal-theme-init.js"></script>
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/background.css">
+    <link rel="stylesheet" href="/css/errors.css">
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <div class="page-bg" aria-hidden="true">
@@ -88,12 +89,12 @@ function renderPage(error) {
 </div>
 <main class="error-page">
     <div class="error-page__panel">
-        <p class="error-page__brand">ИТ-портал 21Vek · ${portalBrand}</p>
+        <p class="error-page__brand">${portalBrand}</p>
         <p class="error-page__code" aria-hidden="true">${error.code}</p>
         <h1 class="error-page__title">${error.title}</h1>
         <p class="error-page__desc">${error.desc}</p>
         <div class="error-page__actions">
-            <a class="btn-primary" href="../index.html">На главную</a>
+            <a class="btn-primary" href="/">На главную</a>
             <a class="btn-secondary" href="${mailto}">Написать в поддержку</a>
         </div>
     </div>

@@ -48,14 +48,40 @@
         dispatch('portal:auth-ready', { user: user });
     }
 
-    function finishRequired() {
+    function finishRequired(reason) {
         ready = true;
         currentUser = null;
         if (readyResolve) {
             readyResolve(null);
             readyResolve = null;
         }
-        dispatch('portal:auth-required');
+        dispatch('portal:auth-required', { reason: reason || null });
+    }
+
+    async function syncAuthConfigFromBackend() {
+        try {
+            const response = await fetch('/api/auth/config-check', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' }
+            });
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            if (!window.PortalConfig.auth) {
+                window.PortalConfig.auth = {};
+            }
+            if (Array.isArray(data.guestRequestTypes)) {
+                window.PortalConfig.auth.guestRequestTypes = data.guestRequestTypes;
+            }
+            if (typeof data.trackerDemoMode === 'boolean') {
+                window.PortalConfig.demoMode = data.trackerDemoMode;
+            }
+        } catch (error) {
+            // backend недоступен — остаётся config.js / config.local.js
+        }
     }
 
     async function fetchCurrentUser() {
@@ -99,7 +125,10 @@
         }
 
         try {
-            const user = await fetchCurrentUser();
+            const [user] = await Promise.all([
+                fetchCurrentUser(),
+                syncAuthConfigFromBackend()
+            ]);
             if (user) {
                 finishReady(user);
                 return user;
@@ -115,7 +144,7 @@
         } catch (error) {
             console.error('PortalAuth.init:', error);
             if (authConfig.requireAuth) {
-                finishRequired();
+                finishRequired('backend_unavailable');
                 return null;
             }
             finishReady(null);

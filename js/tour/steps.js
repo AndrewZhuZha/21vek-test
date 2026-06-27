@@ -16,9 +16,9 @@ window.PortalTourSteps = [
         hideProgress: true
     },
     {
-        selector: '#themeToggle',
-        title: 'Тема оформления',
-        text: 'Переключите светлую или тёмную тему. Выбор сохраняется между визитами.',
+        selector: '#portalAuthUserBtn',
+        title: 'Профиль и тема',
+        text: 'Откройте меню профиля: там ваши данные, переключение темы и выход из портала.',
         placement: 'bottom',
         hideProgress: true
     },

@@ -1,34 +1,69 @@
 /** Экран входа при requireAuth и обработка auth_error из URL. */
 (function () {
     const authConfig = (window.PortalConfig && window.PortalConfig.auth) || {};
-    if (!authConfig.enabled) return;
+    const appLayout = document.querySelector('.app-layout');
+    const skipLink = document.querySelector('.skip-link');
 
-    const gateTagline = document.getElementById('portalTaglineGate');
-    if (gateTagline && window.PortalConfig?.portalTagline) {
-        gateTagline.textContent = window.PortalConfig.portalTagline;
+    function clearAuthPending() {
+        document.documentElement.classList.remove('portal-auth-pending');
+    }
+
+    function revealPortal() {
+        clearAuthPending();
+        if (appLayout) appLayout.hidden = false;
+        if (skipLink) skipLink.hidden = false;
+    }
+
+    function concealPortal() {
+        if (appLayout) appLayout.hidden = true;
+        if (skipLink) skipLink.hidden = true;
+    }
+
+    if (!authConfig.enabled || !authConfig.requireAuth) {
+        revealPortal();
+        return;
+    }
+
+    const gateTitle = document.getElementById('portalAuthGateTitle');
+    if (gateTitle && window.PortalConfig?.portalTagline) {
+        gateTitle.textContent = window.PortalConfig.portalTagline;
     }
 
     const gate = document.getElementById('portalAuthGate');
-    const appLayout = document.querySelector('.app-layout');
     const loginBtn = document.getElementById('portalAuthLoginBtn');
     const errorEl = document.getElementById('portalAuthGateError');
+    const backendUnavailableMessage = 'Сервис авторизации временно недоступен. Попробуйте обновить страницу через минуту.';
 
     function showGate() {
+        clearAuthPending();
+        concealPortal();
         if (gate) gate.classList.remove('hidden');
         if (appLayout) appLayout.setAttribute('aria-hidden', 'true');
         document.body.classList.add('portal-auth-gated');
+        if (loginBtn && typeof loginBtn.focus === 'function') {
+            requestAnimationFrame(() => {
+                loginBtn.focus();
+            });
+        }
     }
 
     function hideGate() {
         if (gate) gate.classList.add('hidden');
         if (appLayout) appLayout.removeAttribute('aria-hidden');
         document.body.classList.remove('portal-auth-gated');
+        revealPortal();
     }
 
     function showAuthError(message) {
         if (!errorEl || !message) return;
         errorEl.textContent = message;
         errorEl.classList.remove('hidden');
+    }
+
+    function clearAuthError() {
+        if (!errorEl) return;
+        errorEl.textContent = '';
+        errorEl.classList.add('hidden');
     }
 
     function stripAuthErrorFromUrl() {
@@ -58,11 +93,15 @@
     }
 
     document.addEventListener('portal:auth-ready', () => {
+        clearAuthError();
         hideGate();
     });
 
-    document.addEventListener('portal:auth-required', () => {
+    document.addEventListener('portal:auth-required', (event) => {
         showGate();
+        if (event.detail?.reason === 'backend_unavailable') {
+            showAuthError(backendUnavailableMessage);
+        }
         const authError = readAuthErrorFromUrl();
         if (authError) {
             showAuthError(decodeURIComponent(authError));
@@ -70,18 +109,16 @@
         }
     });
 
-    if (authConfig.requireAuth) {
-        window.PortalAuth.whenReady().then((user) => {
-            if (user) {
-                hideGate();
-            } else {
-                showGate();
-                const authError = readAuthErrorFromUrl();
-                if (authError) {
-                    showAuthError(decodeURIComponent(authError));
-                    stripAuthErrorFromUrl();
-                }
+    window.PortalAuth.whenReady().then((user) => {
+        if (user) {
+            hideGate();
+        } else {
+            showGate();
+            const authError = readAuthErrorFromUrl();
+            if (authError) {
+                showAuthError(decodeURIComponent(authError));
+                stripAuthErrorFromUrl();
             }
-        });
-    }
+        }
+    });
 })();

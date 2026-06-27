@@ -18,17 +18,21 @@ window.PortalConfig = {
     externalLinks: {
         wiki: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/',
         learning: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/',
-        smdb: 'http://snipeit-tb.triovist.local/'
+        smdb: 'https://snipeit-tb.triovist.local/'
     },
     usefulLinks: {
-        cmdb: 'http://snipeit-tb.triovist.local/',
-        phonebook: 'https://phonebook.company.ru',
+        cmdb: 'https://snipeit-tb.triovist.local/',
+        phonebook: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/',
         knowledge: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/'
     },
     themeStorageKey: 'portal-theme',
     themeTransitionMs: 140,
     defaultTheme: 'system',
-    demoMode: true,
+    /**
+     * Устаревший флаг UI-only preview (GitHub Pages). При работе через backend
+     * demo-режим задаётся переменной TRACKER_DEMO_MODE в backend/.env.
+     */
+    demoMode: false,
     /** POST endpoint backend-прокси для создания задач в Трекере. */
     trackerApiUrl: '/api/tracker/issues',
     /** Endpoint сброса пароля; по умолчанию trackerApiUrl. */
@@ -61,6 +65,8 @@ window.PortalConfig = {
         /** Типы заявок, доступные без входа (пока пусто). */
         guestRequestTypes: [],
         autoFillFio: true,
+        /** Ручные должности по email/login, если Directory API не настроен. */
+        positionByEmail: {},
         loginUrl: '/api/auth/login',
         logoutUrl: '/api/auth/logout',
         userInfoUrl: '/api/auth/me'
@@ -99,6 +105,12 @@ window.PortalConfig = {
                 ...window.PortalConfig.auth,
                 ...window.PortalConfigLocal.auth
             };
+            if (window.PortalConfigLocal.auth.positionByEmail) {
+                window.PortalConfig.auth.positionByEmail = {
+                    ...window.PortalConfig.auth.positionByEmail,
+                    ...window.PortalConfigLocal.auth.positionByEmail
+                };
+            }
         }
     }
 })();

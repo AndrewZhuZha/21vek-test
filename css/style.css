@@ -110,6 +110,7 @@ a {
 .header {
     margin: 0 auto 0.55rem;
     position: relative;
+    z-index: 100;
     padding: 0.45rem 0.15rem 0.28rem;
     background: transparent;
     border: 0;
@@ -255,11 +256,11 @@ a {
 }
 
 .header h1 {
-    font-size: 1.08rem;
+    font-size: 1.15rem;
     font-weight: 700;
     letter-spacing: -0.008em;
     line-height: 1.2;
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
 
 .header-home-btn {
@@ -293,6 +294,19 @@ a {
     pointer-events: none;
 }
 
+.header-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-brand__logo {
+    width: 56px;
+    height: auto;
+    flex-shrink: 0;
+    pointer-events: none;
+}
+
 .header-department {
     display: block;
     margin-top: 0.2rem;
@@ -322,12 +336,14 @@ a {
     gap: 0.6rem;
     align-items: center;
     justify-content: flex-start;
+    overflow: visible;
 }
 
 .header-search-row {
     flex: 1 1 560px;
     max-width: 620px;
     min-width: 0;
+    overflow: visible;
 }
 
 .search-field {
@@ -1077,6 +1093,10 @@ a {
         font-size: 1rem;
     }
 
+    .header-brand__logo {
+        width: 48px;
+    }
+
     .header-department {
         font-size: 0.68rem;
         margin-top: 0.16rem;
@@ -1163,6 +1183,14 @@ a {
 
     .header h1 {
         font-size: 0.95rem;
+    }
+
+    .header-brand {
+        gap: 0.4rem;
+    }
+
+    .header-brand__logo {
+        width: 42px;
     }
 
     .header-main p {

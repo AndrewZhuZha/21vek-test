@@ -8,14 +8,14 @@ window.PortalConfigLocal = {
     // trackerResetApiUrl: '/api/tracker/password-reset',
     // trackerIssueUrlTemplate: 'https://tracker.yandex.ru/{issueKey}',
     // usefulLinks: {
-    //     cmdb: 'http://snipeit-tb.triovist.local/',
-    //     phonebook: 'https://phonebook.company.ru',
-    //     knowledge: 'https://wiki.example.com/'
+    //     cmdb: 'https://snipeit-tb.triovist.local/',
+    //     phonebook: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/',
+    //     knowledge: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/'
     // },
     // externalLinks: {
-    //     wiki: 'https://wiki.example.com/',
-    //     learning: 'https://wiki.example.com/learning',
-    //     smdb: 'http://snipeit-tb.triovist.local/'
+    //     wiki: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/',
+    //     learning: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/',
+    //     smdb: 'https://snipeit-tb.triovist.local/'
     // },
     // tour: {
     //     enabled: true,
@@ -30,6 +30,11 @@ window.PortalConfigLocal = {
     // auth: {
     //     enabled: false,
     //     guestRequestTypes: []
+    // },
+    // auth: {
+    //     positionByEmail: {
+    //         'user@21vek.by': 'Системный администратор'
+    //     }
     // },
     // Или для разработки UI без gate:
     // auth: {

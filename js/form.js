@@ -55,5 +55,20 @@ window.PortalForm = (function () {
         el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
 
-    return { showError, showNotice, clearError, requireValue, showGlobalError, clearGlobalNotice };
+    function showGlobalNotice(message) {
+        const el = document.getElementById('portalGlobalNotice');
+        if (!el) return;
+        el.textContent = message;
+        el.className = 'portal-global-notice portal-global-notice--info';
+    }
+
+    return {
+        showError,
+        showNotice,
+        clearError,
+        requireValue,
+        showGlobalError,
+        showGlobalNotice,
+        clearGlobalNotice
+    };
 })();
