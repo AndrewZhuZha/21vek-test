@@ -193,12 +193,13 @@ html.is-programmatic-scroll .section-nav__chip:hover {
 }
 
 .scroll-to-top {
+    --scroll-to-top-lift: 0px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     position: fixed;
     right: max(16px, env(safe-area-inset-right));
-    bottom: max(20px, env(safe-area-inset-bottom));
+    bottom: calc(max(20px, env(safe-area-inset-bottom)) + var(--scroll-to-top-lift));
     z-index: 90;
     width: 42px;
     height: 42px;
@@ -214,9 +215,9 @@ html.is-programmatic-scroll .section-nav__chip:hover {
     pointer-events: none;
     transform: translateY(10px);
     transition:
-        opacity 0.18s ease,
-        visibility 0.18s ease,
-        transform 0.18s ease,
+        opacity 0.16s ease,
+        visibility 0.16s ease,
+        transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
         box-shadow 0.12s ease,
         border-color 0.12s ease,
         color 0.12s ease;
@@ -259,7 +260,7 @@ html.is-programmatic-scroll .section-nav__chip:hover {
 @media (min-width: 1280px) {
     .scroll-to-top {
         right: max(24px, env(safe-area-inset-right));
-        bottom: max(28px, env(safe-area-inset-bottom));
+        bottom: calc(max(28px, env(safe-area-inset-bottom)) + var(--scroll-to-top-lift));
         width: 46px;
         height: 46px;
     }

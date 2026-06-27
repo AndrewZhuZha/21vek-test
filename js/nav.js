@@ -109,13 +109,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!visibleSections.length) return;
 
         if (window.scrollY <= 8) {
-            setActive(getFirstVisibleSectionId());
+            setActive(getFirstVisibleSectionId(), { scrollChip: true });
             return;
         }
 
         const pageHeight = document.documentElement.scrollHeight;
         if (window.scrollY + window.innerHeight >= pageHeight - 2) {
-            setActive(getLastVisibleSectionId());
+            setActive(getLastVisibleSectionId(), { scrollChip: true });
             return;
         }
 
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 : Number.POSITIVE_INFINITY;
 
             if (top <= anchorY && anchorY < nextTop) {
-                setActive(id);
+                setActive(id, { scrollChip: true });
                 return;
             }
         }
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 || intersecting[0];
 
             if (candidate?.target?.id) {
-                setActive(candidate.target.id);
+                setActive(candidate.target.id, { scrollChip: true });
             }
         }, {
             root: null,
@@ -328,8 +328,11 @@ function initSoonTooltip() {
 function initScrollToTop(scrollToTopHandler) {
     const button = document.getElementById('scrollToTopBtn');
     if (!button) return;
+    const footer = document.getElementById('pageFooter');
 
     let rafScheduled = false;
+    let isVisible = false;
+    let lastLift = -1;
 
     function isModalOpen() {
         return Boolean(document.querySelector('.modal-overlay.active'));
@@ -337,7 +340,33 @@ function initScrollToTop(scrollToTopHandler) {
 
     function updateVisibility() {
         rafScheduled = false;
-        const show = window.scrollY > 320 && !isModalOpen();
+        const scrollY = window.scrollY || window.pageYOffset || 0;
+        const showThreshold = 340;
+        const hideThreshold = 260;
+        let show = isVisible ? scrollY > hideThreshold : scrollY > showThreshold;
+        if (isModalOpen()) {
+            show = false;
+        }
+
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        const footerTop = footer ? footer.getBoundingClientRect().top : viewportHeight + 1;
+        const overlap = Math.max(0, viewportHeight - footerTop);
+        const baseBottom = window.matchMedia('(min-width: 1280px)').matches ? 28 : 20;
+        const extraGap = 12;
+        // Keep the button fully above the visible footer area.
+        const rawLift = overlap + extraGap - baseBottom;
+        const lift = rawLift > 0 ? Math.round(rawLift) : 0;
+        if (lift !== lastLift) {
+            button.style.setProperty('--scroll-to-top-lift', `${lift}px`);
+            lastLift = lift;
+        }
+
+        isVisible = show;
+
+        // Avoid aria-hidden on a focused control (a11y warning in Chromium).
+        if (!show && button === document.activeElement && typeof button.blur === 'function') {
+            button.blur();
+        }
 
         button.classList.toggle('is-visible', show);
         button.setAttribute('aria-hidden', String(!show));

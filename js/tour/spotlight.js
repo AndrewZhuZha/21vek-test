@@ -279,13 +279,18 @@ window.PortalTourSpotlight = (function () {
             return showModalStep(step, index, total, handlers);
         }
 
+        if (typeof step.prepare === 'function') {
+            step.prepare();
+        }
+
         const target = document.querySelector(step.selector);
         if (!target) {
             return false;
         }
 
-        if (typeof step.prepare === 'function') {
-            step.prepare();
+        const targetRect = target.getBoundingClientRect();
+        if (!targetRect.width && !targetRect.height) {
+            return false;
         }
 
         clearHighlight();

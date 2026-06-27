@@ -346,6 +346,10 @@ html.portal-auth-pending .portal-auth-gate.hidden {
     background: var(--border-subtle, rgba(15, 23, 42, 0.12));
 }
 
+.portal-auth-menu__divider--in-actions {
+    margin: 0.28rem 0;
+}
+
 .portal-auth-menu__actions {
     display: flex;
     flex-direction: column;

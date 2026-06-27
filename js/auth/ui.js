@@ -14,6 +14,8 @@
     const menuPositionEl = document.getElementById('portalAuthMenuPosition');
     const emailEl = document.getElementById('portalAuthEmail');
     const menuEl = document.getElementById('portalAuthMenu');
+    const myIssuesBtn = document.getElementById('portalAuthMyIssuesBtn');
+    const myAssetsBtn = document.getElementById('portalAuthMyAssetsBtn');
     const logoutBtn = document.getElementById('portalAuthLogoutBtn');
     const loginHeaderBtn = document.getElementById('portalAuthLoginHeaderBtn');
     const headerThemeBtn = document.getElementById('themeToggleHeader');
@@ -47,6 +49,108 @@
         if (position) return position;
         if (user?.department) return String(user.department).trim();
         return '';
+    }
+
+    async function copyTextToClipboard(value) {
+        const text = String(value || '').trim();
+        if (!text) return false;
+
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (error) {
+                // fallback below
+            }
+        }
+
+        try {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.setAttribute('readonly', 'readonly');
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            textarea.style.pointerEvents = 'none';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            const copied = document.execCommand('copy');
+            document.body.removeChild(textarea);
+            return copied;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function attachCopyHandler(el, getText) {
+        if (!el || typeof getText !== 'function') return;
+        el.addEventListener('click', async (event) => {
+            event.preventDefault();
+            const text = String(getText() || '').trim();
+            if (!text) return;
+            await copyTextToClipboard(text);
+        });
+    }
+
+    function openExternal(url) {
+        if (!url) return;
+        const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+        if (newWindow) {
+            newWindow.opener = null;
+        }
+    }
+
+    function getMyIssuesUrl() {
+        const config = window.PortalConfig || {};
+        const queueKey = String(config.trackerQueue || '').trim();
+        const query = [queueKey ? `Queue: ${queueKey}` : '', 'Author: me()']
+            .filter(Boolean)
+            .join(' ');
+
+        let issuesUrl = 'https://tracker.yandex.ru/issues/';
+        const issueTemplate = String(config.trackerIssueUrlTemplate || '').trim();
+        if (issueTemplate) {
+            try {
+                const sampleIssueUrl = issueTemplate.includes('{issueKey}')
+                    ? issueTemplate.replace('{issueKey}', 'TMP-1')
+                    : issueTemplate;
+                const parsed = new URL(sampleIssueUrl, window.location.origin);
+                issuesUrl = `${parsed.origin}/issues/`;
+            } catch (error) {
+                // fallback to default tracker host
+            }
+        }
+
+        try {
+            const url = new URL(issuesUrl, window.location.origin);
+            url.searchParams.set('_q', query);
+            return url.toString();
+        } catch (error) {
+            return `${issuesUrl}?_q=${encodeURIComponent(query)}`;
+        }
+    }
+
+    function getMyAssetsUrl() {
+        const config = window.PortalConfig || {};
+        const user = window.PortalAuth?.getUser?.();
+        const identity = String(user?.email || user?.login || '').trim();
+        const baseUrl = String(config.externalLinks?.smdb || config.usefulLinks?.cmdb || '').trim();
+        if (!baseUrl) return '';
+
+        try {
+            const url = new URL(baseUrl, window.location.origin);
+            const normalizedPath = url.pathname.replace(/\/+$/, '');
+            if (!/\/users$/i.test(normalizedPath)) {
+                url.pathname = `${normalizedPath || ''}/users`;
+            }
+            if (identity) {
+                url.searchParams.set('search', identity);
+            }
+            return url.toString();
+        } catch (error) {
+            return baseUrl;
+        }
     }
 
     function isAllowedAvatarUrl(avatarUrl) {
@@ -139,6 +243,16 @@
         renderAvatarPair(displayName, user.avatarUrl, menuAvatarImg, menuAvatarInitials);
     }
 
+    attachCopyHandler(menuNameEl, () => menuNameEl?.textContent || '');
+    attachCopyHandler(menuPositionEl, () => {
+        if (menuPositionEl?.classList.contains('portal-auth-menu__position--empty')) return '';
+        return menuPositionEl?.textContent || '';
+    });
+    attachCopyHandler(emailEl, () => {
+        if (emailEl?.hidden) return '';
+        return emailEl?.textContent || '';
+    });
+
     function isMenuOpen() {
         return Boolean(menuEl && !menuEl.classList.contains('hidden'));
     }
@@ -213,6 +327,14 @@
         });
     }
 
+    document.addEventListener('portal:auth-menu-open', () => {
+        openMenu();
+    });
+
+    document.addEventListener('portal:auth-menu-close', () => {
+        closeMenu();
+    });
+
     document.addEventListener('portal:theme-switching', (event) => {
         themeSwitching = Boolean(event.detail && event.detail.active);
         if (themeSwitching) {
@@ -228,9 +350,25 @@
 
     document.addEventListener('click', (event) => {
         if (themeSwitching) return;
-        if (event.target.closest('.portal-auth-user')) {
+        const target = event.target instanceof Element ? event.target : null;
+        if (!target) {
+            closeMenu();
             return;
         }
+        if (target.closest('.portal-tour')) {
+            return;
+        }
+        if (target.closest('.portal-auth-user')) {
+            return;
+        }
+        closeMenu();
+    });
+
+    document.addEventListener('portal:tour-completed', () => {
+        closeMenu();
+    });
+
+    document.addEventListener('portal:tour-skipped', () => {
         closeMenu();
     });
 
@@ -243,6 +381,20 @@
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
             window.PortalAuth.logout();
+        });
+    }
+
+    if (myIssuesBtn) {
+        myIssuesBtn.addEventListener('click', () => {
+            openExternal(getMyIssuesUrl());
+            closeMenu({ restoreFocus: false });
+        });
+    }
+
+    if (myAssetsBtn) {
+        myAssetsBtn.addEventListener('click', () => {
+            openExternal(getMyAssetsUrl());
+            closeMenu({ restoreFocus: false });
         });
     }
 

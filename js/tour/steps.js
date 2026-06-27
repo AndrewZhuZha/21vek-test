@@ -3,7 +3,7 @@ window.PortalTourSteps = [
     {
         modal: true,
         title: 'Добро пожаловать на ИТ-портал',
-        text: 'Краткая экскурсия покажет, как найти нужную услугу и оформить заявку. Это займёт меньше минуты.',
+        text: 'Короткий тур покажет, как быстро найти сервис, оформить заявку и использовать персональные действия в профиле.',
         nextLabel: 'Начать',
         hideProgress: true,
         hideBack: true
@@ -11,23 +11,37 @@ window.PortalTourSteps = [
     {
         selector: '#cardSearch',
         title: 'Поиск по услугам',
-        text: 'Введите название услуги или ключевое слово — карточки отфильтруются. Поддерживаются синонимы и исправление раскладки.',
+        text: 'Введите название услуги или ключевое слово — карточки отфильтруются. Можно использовать горячую клавишу Ctrl+F.',
         placement: 'bottom',
         hideProgress: true
     },
     {
         selector: '#portalAuthUserBtn',
-        title: 'Профиль и тема',
-        text: 'Откройте меню профиля: там ваши данные, переключение темы и выход из портала.',
+        title: 'Меню профиля',
+        text: 'Здесь ваши данные, персональные быстрые действия, переключение темы и выход из портала.',
         placement: 'bottom',
         hideProgress: true
+    },
+    {
+        selector: '#portalAuthMyIssuesBtn',
+        title: 'Мои заявки и техника',
+        text: 'В меню профиля доступны кнопки «Мои заявки» (Tracker) и «Моя техника» (SMDB) с переходом под вашу учётную запись.',
+        placement: 'left',
+        hideProgress: true,
+        skipScrollIntoView: true,
+        prepare: function () {
+            document.dispatchEvent(new CustomEvent('portal:auth-menu-open'));
+        }
     },
     {
         selector: '#sectionNavChips',
         title: 'Навигация по разделам',
         text: 'Быстрый переход к нужной категории заявок. Активный раздел подсвечивается при прокрутке страницы.',
         placement: 'bottom',
-        hideProgress: true
+        hideProgress: true,
+        prepare: function () {
+            document.dispatchEvent(new CustomEvent('portal:auth-menu-close'));
+        }
     },
     {
         selector: '.service-card[data-request-type="tech_support"]',

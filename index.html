@@ -44,17 +44,9 @@
         <img src="/assets/logo-21vek.svg" class="portal-auth-gate__logo" alt="21VEK" width="140" height="50">
         <div id="portalAuthGateStepIntro" class="portal-auth-gate__step">
             <h1 class="portal-auth-gate__title" id="portalAuthGateTitle">IT-Support · 21VEK</h1>
-            <p class="portal-auth-gate__desc">Войдите корпоративной учётной записью Яндекс (@21vek.by), чтобы продолжить.</p>
+            <p class="portal-auth-gate__desc">Войдите корпоративной учётной записью Яндекс (@21vek.by). После нажатия откроется Яндекс ID — выберите нужный аккаунт.</p>
             <p id="portalAuthGateError" class="portal-auth-gate__error hidden" role="alert"></p>
             <button type="button" id="portalAuthLoginBtn" class="btn-primary portal-auth-gate__btn">Войти через Яндекс</button>
-        </div>
-        <div id="portalAuthGateStepConfirm" class="portal-auth-gate__step hidden" aria-labelledby="portalAuthGateConfirmTitle">
-            <h2 class="portal-auth-gate__subtitle" id="portalAuthGateConfirmTitle">Выбор учётной записи</h2>
-            <p class="portal-auth-gate__desc">На следующем шаге откроется Яндекс ID. Выберите корпоративный аккаунт <strong>@21vek.by</strong> или войдите под нужной учётной записью.</p>
-            <div class="portal-auth-gate__actions">
-                <button type="button" id="portalAuthConfirmBtn" class="btn-primary portal-auth-gate__btn">Продолжить на Яндекс</button>
-                <button type="button" id="portalAuthBackBtn" class="portal-auth-gate__back">Назад</button>
-            </div>
         </div>
         <p class="portal-auth-gate__notice">Без корпоративной учётной записи <strong>@21vek.by</strong> обратиться через портал не получится.</p>
     </div>
@@ -124,6 +116,15 @@
                                 </div>
                                 <div class="portal-auth-menu__divider" role="presentation"></div>
                                 <div class="portal-auth-menu__actions">
+                                    <button type="button" id="portalAuthMyIssuesBtn" class="portal-auth-menu__action" role="menuitem">
+                                        <span class="portal-auth-menu__action-icon" aria-hidden="true">🧾</span>
+                                        <span class="portal-auth-menu__action-label">Мои заявки</span>
+                                    </button>
+                                    <button type="button" id="portalAuthMyAssetsBtn" class="portal-auth-menu__action" role="menuitem">
+                                        <span class="portal-auth-menu__action-icon" aria-hidden="true">💻</span>
+                                        <span class="portal-auth-menu__action-label">Моя техника</span>
+                                    </button>
+                                    <div class="portal-auth-menu__divider portal-auth-menu__divider--in-actions" role="presentation"></div>
                                     <button type="button" class="portal-auth-menu__action theme-toggle" id="portalAuthMenuThemeToggle" aria-pressed="false" role="menuitem">
                                         <span class="portal-auth-menu__action-icon theme-toggle__icon" aria-hidden="true">🌙</span>
                                         <span class="portal-auth-menu__action-label theme-toggle__label">Тёмная тема</span>
