@@ -1,0 +1,15 @@
+{
+  "name": "21vek-it-portal",
+  "private": true,
+  "description": "ИТ-портал 21vek — статический фронтенд + backend авторизации",
+  "scripts": {
+    "build:search": "node scripts/build-search-index.mjs",
+    "build:errors": "node scripts/build-error-pages.mjs",
+    "build": "npm run build:search && npm run build:errors",
+    "postinstall": "npm install --prefix backend",
+    "start": "node backend/src/index.js",
+    "dev": "node --watch backend/src/index.js",
+    "setup:auth": "node scripts/setup-auth-env.mjs",
+    "verify:auth": "node scripts/verify-auth-smoke.mjs"
+  }
+}

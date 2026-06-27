@@ -1,25 +1,54 @@
+document.addEventListener('DOMContentLoaded', () => {
+    bootstrapApp();
+});
 
-    // ----- маппинг для форм (задач) -----
-    const requestMap = {
-        tech_support: { title: "Техническая поддержка — запрос", options: ["Консультация", "Помощь с ПО", "Настройка рабочего места"], defaultOpt: "Консультация" },
-        software_issues: { title: "Сбои и ошибки ПО", options: ["Критический сбой", "Зависание программы", "Ошибка при запуске"], defaultOpt: "Критический сбой" },
-        equipment_issue: { title: "Выдача оборудования", options: ["Выдать ноутбук", "Выдать ПК", "Выдать монитор/периферию"], defaultOpt: "Выдать ноутбук" },
-        equipment_return: { title: "Возврат оборудования", options: ["Сдача при увольнении", "Сдача в ремонт", "Списание"], defaultOpt: "Сдача при увольнении" },
-        equipment_transfer: { title: "Передача оборудования", options: ["Передача другому сотруднику", "Перемещение между офисами"], defaultOpt: "Передача другому сотруднику" },
-        hr_new: { title: "Новый сотрудник", options: ["Создать УЗ", "Выдать оборудование", "Оформить пропуск"], defaultOpt: "Создать УЗ" },
-        hr_dismiss: { title: "Увольнение сотрудника", options: ["Блокировка УЗ", "Приём техники", "Отзыв доступов"], defaultOpt: "Блокировка УЗ" },
-        hr_change: { title: "Изменение сотрудника", options: ["Смена отдела", "Изменение прав доступа", "Обновление данных"], defaultOpt: "Смена отдела" },
-        org_structure: { title: "Изменение орг. структуры", options: ["Создать отдел", "Переименовать", "Удалить подразделение"], defaultOpt: "Создать отдел" },
-        vm_create: { title: "Создание ВМ", options: ["Linux ВМ", "Windows ВМ", "Дополнительные ресурсы"], defaultOpt: "Linux ВМ" },
-        network_access: { title: "Предоставление сетевого доступа", options: ["VPN доступ", "Открыть порт", "Доступ к VLAN"], defaultOpt: "VPN доступ" },
-        skud_access: { title: "Предоставление доступа (СКУД)", options: ["Новый пропуск", "Настройка турникета", "Электронный замок"], defaultOpt: "Новый пропуск" },
-        skud_repair: { title: "Ремонт СКУД", options: ["Не работает турникет", "Считыватель", "Контроллер"], defaultOpt: "Не работает турникет" },
-        camera_install: { title: "Установка видеонаблюдения", options: ["Монтаж камеры", "Настройка записи", "Расширение системы"], defaultOpt: "Монтаж камеры" },
-        printer_setup: { title: "Программная настройка принтера", options: ["Добавить принтер", "Настройка драйверов", "Сетевая печать"], defaultOpt: "Добавить принтер" },
-        printer_repair: { title: "Ремонт и обслуживание принтера", options: ["Заправка картриджа", "Замена узлов", "Чистка/ремонт"], defaultOpt: "Заправка картриджа" },
-        other_noform: { title: "Без формы — другой запрос", options: ["Произвольный запрос", "Административное", "Другое"], defaultOpt: "Произвольный запрос" },
-        universal_it: { title: "Обращение в ИТ (универсальное)", options: ["Инцидент", "Запрос услуги", "Консультация"], defaultOpt: "Запрос услуги" }
-    };
+async function bootstrapApp() {
+    const config = window.PortalConfig || {};
+    const auth = window.PortalAuth;
+
+    if (auth?.isEnabled()) {
+        await auth.whenReady();
+        if (auth.isRequired() && !auth.isAuthenticated()) {
+            return;
+        }
+    }
+
+    initPortalApp(config);
+}
+
+function getAuthPrefillName() {
+    const authConfig = window.PortalConfig?.auth || {};
+    if (!authConfig.autoFillFio) return '';
+    const user = window.PortalAuth?.getUser();
+    return user?.displayName || '';
+}
+
+function initPortalApp(config) {
+    const { trackerQueue, twoStepRequestTypes, usefulLinks, externalLinks, demoMode } = config;
+
+    document.querySelectorAll('[data-portal-link]').forEach(link => {
+        const key = link.getAttribute('data-portal-link');
+        const url = externalLinks?.[key];
+        if (url) link.setAttribute('href', url);
+    });
+
+    const taglineEl = document.getElementById('portalTagline');
+    if (taglineEl && config.portalTagline) {
+        taglineEl.textContent = config.portalTagline;
+    }
+
+    document.querySelectorAll('[data-support-mail]').forEach(link => {
+        const email = config.supportEmail || 'itsupport@21vek.by';
+        const subject = link.getAttribute('data-mail-subject') || 'ИТ-портал — обращение';
+        link.setAttribute('href', `mailto:${email}?subject=${encodeURIComponent(subject)}`);
+    });
+    const { open: openModal, close: closeModalOverlay, setup: setupModal } = window.PortalModal;
+    const { showError, showNotice, clearError, requireValue, showGlobalError } = window.PortalForm;
+
+    const requestMap = window.PortalRequestTypes || {};
+    if (!Object.keys(requestMap).length) {
+        console.error('PortalRequestTypes не загружен. Запустите: node scripts/build-search-index.mjs');
+    }
 
     const modalOverlay = document.getElementById('taskModal');
     const modalTitle = document.getElementById('modalTitle');
@@ -27,45 +56,78 @@
     const subcategorySelect = document.getElementById('subcategorySelect');
     const summaryInput = document.getElementById('summary');
     const dynamicForm = document.getElementById('dynamicForm');
+    const submitBtn = document.getElementById('submitTaskBtn');
+    const cancelBtn = document.getElementById('closeModalBtn');
 
     let currentRequestKey = '';
-    let modalStep = 1; // 1 = initial, 2 = detailed
-
-    const submitBtn = document.querySelector('#taskModal .btn-primary');
-    const cancelBtn = document.getElementById('closeModalBtn');
+    let modalStep = 1;
     let netFolderCounter = 0;
+
+    function isTwoStepRequest(key) {
+        return twoStepRequestTypes.includes(key);
+    }
+
+    function goBackToStep1() {
+        const step2 = document.getElementById('step2Fields');
+        if (step2) step2.remove();
+        modalStep = 1;
+        netFolderCounter = 0;
+        setModalButtonsForStep(1);
+        clearError(dynamicForm);
+    }
+
+    function handleCancelClick() {
+        if (modalStep === 2 && isTwoStepRequest(currentRequestKey)) {
+            goBackToStep1();
+            return;
+        }
+        closeTaskModal();
+    }
 
     function setModalButtonsForStep(step) {
         if (!submitBtn || !cancelBtn) return;
+
         if (step === 1) {
-            submitBtn.textContent = 'Далее';
+            submitBtn.textContent = isTwoStepRequest(currentRequestKey)
+                ? 'Далее'
+                : 'Создать задачу в Трекере';
             cancelBtn.textContent = 'Отмена';
-            // cancel -> close modal
-            cancelBtn.onclick = closeModal;
         } else if (step === 2) {
             submitBtn.textContent = 'Оставить заявку!';
             cancelBtn.textContent = 'Назад';
-            // cancel -> go back to step1
-            cancelBtn.onclick = () => {
-                const step2 = document.getElementById('step2Fields');
-                if (step2) step2.remove();
-                modalStep = 1;
-                setModalButtonsForStep(1);
-            };
         }
     }
 
-    function renderStep2(requestKey) {
+    function resetTaskModalState() {
+        dynamicForm.reset();
+        document.getElementById('conditionalFields').innerHTML = '';
+        const step2 = document.getElementById('step2Fields');
+        if (step2) step2.remove();
+        modalStep = 1;
+        netFolderCounter = 0;
+        setModalButtonsForStep(1);
+        clearError(dynamicForm);
+        window.PortalTracker?.setButtonLoading(submitBtn, false);
+        window.PortalTracker?.releaseTaskSubmitLock();
+    }
+
+    function closeTaskModal() {
+        closeModalOverlay(modalOverlay);
+    }
+
+    function renderStep2() {
+        if (currentRequestKey !== 'hr_new') return;
+
         const container = document.getElementById('conditionalFields');
-        if (!container) return;
+        if (!container || document.getElementById('step2Fields')) return;
+
         const step2 = document.createElement('div');
         step2.id = 'step2Fields';
-        step2.style.marginTop = '0.6rem';
         step2.innerHTML = `
             <div class="form-group">
                 <h4>Сервисы и доступы</h4>
-                <p style="color:#5d7f97; margin-top:0.25rem;">Лучше всего уточнить у руководителя</p>
-                <div style="display:flex;flex-direction:column;gap:0.45rem;margin-top:0.6rem;">
+                <p class="step2-hint">Лучше всего уточнить у руководителя</p>
+                <div class="step2-stack">
                     <label><input type="checkbox" name="accessService" value="Учетная запись ПК"> Учётная запись для ПК, или ТСД</label>
                     <label><input type="checkbox" name="accessService" value="Яндекс.Почта"> Яндекс.Почта</label>
                     <label><input type="checkbox" name="accessService" value="Call-Centre"> Call-Centre</label>
@@ -77,28 +139,28 @@
                 </div>
             </div>
             <div class="form-group">
-                <label>В какую почтовую рассылку добавить?</label>
-                <input type="text" id="mailList" placeholder="">
+                <label for="mailList">В какую почтовую рассылку добавить?</label>
+                <input type="text" id="mailList" name="mailList" placeholder="">
             </div>
             <div class="form-group">
-                <label>В какую группу Битрикс добавить?</label>
-                <input type="text" id="bitrixGroup" placeholder="Если не надо - оставляем пустым">
+                <label for="bitrixGroup">В какую группу Битрикс добавить?</label>
+                <input type="text" id="bitrixGroup" name="bitrixGroup" placeholder="Если не надо - оставляем пустым">
             </div>
             <div class="form-group">
                 <h4>Какие сетевые папки и диски нужно предоставить?</h4>
                 <div id="netFoldersWrap">
-                    <div class="net-folder-item" style="border:1px solid rgba(200,200,200,0.06); padding:0.8rem; border-radius:0.6rem; margin-bottom:0.6rem;">
-                        <div style="margin-bottom:0.5rem; font-weight:600;">Буква диска</div>
+                    <div class="net-folder-item step2-box">
+                        <div class="step2-disk-title">Буква диска</div>
                         <label><input type="radio" name="netDisk" value="T"> Диск T</label>
                         <label><input type="radio" name="netDisk" value="R"> Диск R</label>
-                        <div style="margin-top:0.6rem;"><input type="text" name="netPath" placeholder="Расположение, или наименование папки" style="width:100%;"></div>
+                        <div class="step2-input-wrap"><input type="text" name="netPath" placeholder="Расположение, или наименование папки"></div>
                     </div>
                 </div>
-                <button type="button" id="addNetFolderBtn" style="margin-top:0.4rem;">+ Ещё</button>
+                <button type="button" id="addNetFolderBtn">+ Ещё</button>
             </div>
             <div class="form-group">
-                <label>Какие базы вы 1С на устройстве ?</label>
-                <div style="display:flex;flex-direction:column;gap:0.35rem;margin-top:0.5rem;">
+                <label>Какие базы 1С на устройстве?</label>
+                <div class="step2-stack-small">
                     <label><input type="checkbox" name="base1c" value="Рабочая база (УТ)"> Рабочая база (УТ)</label>
                     <label><input type="checkbox" name="base1c" value="Тестовая база"> Тестовая база</label>
                     <label><input type="checkbox" name="base1c" value="УАТ / ТЛЭ"> УАТ / ТЛЭ</label>
@@ -108,7 +170,7 @@
             </div>
             <div class="form-group">
                 <h4>К каким банковским сервисам нужен доступ?</h4>
-                <div style="display:flex;flex-direction:column;gap:0.35rem;margin-top:0.5rem;">
+                <div class="step2-stack-small">
                     <label><input type="checkbox" name="bankService" value="Альфа-банк"> Альфа-банк</label>
                     <label><input type="checkbox" name="bankService" value="БНБ"> БНБ</label>
                     <label><input type="checkbox" name="bankService" value="БР"> БР</label>
@@ -117,8 +179,8 @@
                     <label><input type="checkbox" name="bankService" value="МТБ"> МТБ</label>
                     <label><input type="checkbox" name="bankService" value="Приор"> Приор</label>
                 </div>
-                <label style="margin-top:0.6rem;">К каким серверам нужен доступ?</label>
-                <input type="text" id="serversAccess" placeholder="Например: vws-ots-fszn.triovist.local" style="width:100%;">
+                <label for="serversAccess" class="step2-title-strong">К каким серверам нужен доступ?</label>
+                <input type="text" id="serversAccess" name="serversAccess" placeholder="Например: vws-ots-fszn.triovist.local">
             </div>
             <div class="form-group">
                 <h4>Оборудование</h4>
@@ -126,30 +188,30 @@
                 <label><input type="checkbox" name="needReturn" value="Да"> Нужно ли сдавать оборудование?</label>
             </div>
             <div class="form-group">
-                <h4>Оборудование</h4>
-                <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.45rem;">
+                <h4>Детали оборудования</h4>
+                <div class="step2-grid">
                     <div>
-                        <label>Имя компьютера:</label>
-                        <input type="text" id="computerName" placeholder="">
+                        <label for="computerName">Имя компьютера:</label>
+                        <input type="text" id="computerName" name="computerName" placeholder="">
                     </div>
                     <div>
-                        <label>Где сотрудник будет получать оборудование?</label>
-                        <select id="receiveLocation">
+                        <label for="receiveLocation">Где сотрудник будет получать оборудование?</label>
+                        <select id="receiveLocation" name="receiveLocation">
                             <option value="">-</option>
                             <option>ПВЗ</option>
                             <option>Склад</option>
                             <option>Депо</option>
                             <option>Офис Покровский</option>
                         </select>
-                        <div style="font-size:0.85rem;color:#5d7f97;margin-top:0.25rem;">Там же ему надо будет расписываться в накладной</div>
+                        <div class="step2-note">Там же ему надо будет расписываться в накладной</div>
                     </div>
                     <div>
-                        <label>Напишите место</label>
-                        <input type="text" id="placeWrite" placeholder="ПВЗ, склад, депо?">
+                        <label for="placeWrite">Напишите место</label>
+                        <input type="text" id="placeWrite" name="placeWrite" placeholder="ПВЗ, склад, депо?">
                     </div>
                     <div>
-                        <label style="font-weight:700;margin-top:0.45rem;">Основное устройство</label>
-                        <div style="display:flex;flex-direction:column;gap:0.4rem;margin-top:0.4rem;">
+                        <label class="step2-title-strong">Основное устройство</label>
+                        <div class="step2-stack">
                             <label><input type="checkbox" name="mainDevice" value="ПК"> Персональный компьютер</label>
                             <label><input type="checkbox" name="mainDevice" value="Ноутбук"> Ноутбук</label>
                             <label><input type="checkbox" name="mainDevice" value="MacBook"> MacBook</label>
@@ -158,8 +220,8 @@
                         </div>
                     </div>
                     <div>
-                        <label style="font-weight:700;margin-top:0.45rem;">Доп. оборудование и периферия</label>
-                        <div style="display:flex;flex-direction:column;gap:0.4rem;margin-top:0.4rem;">
+                        <label class="step2-title-strong">Доп. оборудование и периферия</label>
+                        <div class="step2-stack">
                             <label><input type="checkbox" name="peripheral" value="Гарнитура"> Гарнитура</label>
                             <label><input type="checkbox" name="peripheral" value="Клавиатура/мышь"> Клавиатура/мышь</label>
                             <label><input type="checkbox" name="peripheral" value="Док-станция"> Док-станция</label>
@@ -169,26 +231,26 @@
                         </div>
                     </div>
                     <div>
-                        <label>Выберите тариф для Sim-карты</label>
-                        <select id="simTariff">
+                        <label for="simTariff">Выберите тариф для Sim-карты</label>
+                        <select id="simTariff" name="simTariff">
                             <option value="">-</option>
                             <option>Тариф A</option>
                             <option>Тариф B</option>
                         </select>
                     </div>
                     <div>
-                        <label>Дополнительное описание</label>
-                        <textarea id="equipDesc" rows="4" placeholder=""></textarea>
+                        <label for="equipDesc">Дополнительное описание</label>
+                        <textarea id="equipDesc" name="equipDesc" rows="4" placeholder=""></textarea>
                     </div>
                     <div>
-                        <label>Где сотрудник будет сдавать оборудование?</label>
-                        <select id="returnLocation">
+                        <label for="returnLocation">Где сотрудник будет сдавать оборудование?</label>
+                        <select id="returnLocation" name="returnLocation">
                             <option value="">-</option>
                             <option>ПВЗ</option>
                             <option>Склад</option>
                             <option>Депо</option>
                         </select>
-                        <div style="font-size:0.85rem;color:#5d7f97;margin-top:0.25rem;">Там же ему надо будет расписываться в накладной</div>
+                        <div class="step2-note">Там же ему надо будет расписываться в накладной</div>
                     </div>
                 </div>
             </div>
@@ -196,41 +258,177 @@
 
         container.appendChild(step2);
 
-        // set unique names for the initial net folder radio group
         const first = step2.querySelector('.net-folder-item');
         if (first) {
             netFolderCounter++;
-            first.querySelectorAll('input[type="radio"]').forEach(r => r.name = `netDisk_${netFolderCounter}`);
-            first.querySelectorAll('input[name="netPath"]').forEach(p => p.name = 'netPath');
+            first.querySelectorAll('input[type="radio"]').forEach(r => { r.name = `netDisk_${netFolderCounter}`; });
         }
 
-        // attach addNetFolder handler
         const addBtn = document.getElementById('addNetFolderBtn');
         if (addBtn) {
             addBtn.addEventListener('click', () => {
                 const wrap = document.getElementById('netFoldersWrap');
                 netFolderCounter++;
                 const node = document.createElement('div');
-                node.className = 'net-folder-item';
-                node.style = 'border:1px solid rgba(200,200,200,0.06); padding:0.8rem; border-radius:0.6rem; margin-bottom:0.6rem;';
-                node.innerHTML = `<div style="margin-bottom:0.5rem; font-weight:600;">Буква диска</div>
+                node.className = 'net-folder-item step2-box';
+                node.innerHTML = `<div class="step2-disk-title">Буква диска</div>
                     <label><input type="radio" value="T"> Диск T</label>
                     <label><input type="radio" value="R"> Диск R</label>
-                    <div style="margin-top:0.6rem;"><input type="text" name="netPath" placeholder="Расположение, или наименование папки" style="width:100%;"></div>`;
-                // set radios' name to unique group
-                node.querySelectorAll('input[type="radio"]').forEach(r => r.name = `netDisk_${netFolderCounter}`);
+                    <div class="step2-input-wrap"><input type="text" name="netPath" placeholder="Расположение, или наименование папки"></div>`;
+                node.querySelectorAll('input[type="radio"]').forEach(r => { r.name = `netDisk_${netFolderCounter}`; });
                 wrap.appendChild(node);
             });
         }
     }
 
-    function openTaskModal(requestKey, displayTitle) {
+    function buildTechSupportExtra() {
+        const detailedVal = document.getElementById('detailedText')?.value.trim() || '';
+        const loc = dynamicForm.querySelector('input[name="location"]:checked')?.value || '';
+        return `\nДетали: ${detailedVal}\nМестоположение: ${loc}`;
+    }
+
+    function buildHrNewExtra() {
+        const fioEmp = document.getElementById('fioEmployee')?.value.trim() || '';
+        const posEmp = document.getElementById('positionEmployee')?.value.trim() || '';
+        const deptEmp = document.getElementById('departmentEmployee')?.value.trim() || '';
+        const mgrEmp = document.getElementById('managerEmployee')?.value.trim() || '';
+        const startEmp = document.getElementById('startDateEmployee')?.value.trim() || '';
+        const obsEmp = document.getElementById('observersEmployee')?.value.trim() || '';
+        const accessServices = Array.from(document.querySelectorAll('input[name="accessService"]:checked')).map(i => i.value).join(', ');
+        const mailList = document.getElementById('mailList')?.value.trim() || '';
+        const bitrixGroup = document.getElementById('bitrixGroup')?.value.trim() || '';
+        const netFolders = Array.from(document.querySelectorAll('.net-folder-item')).map(node => {
+            const disk = node.querySelector('input[type="radio"]:checked')?.value || '';
+            const path = node.querySelector('input[name="netPath"]')?.value.trim() || '';
+            return disk || path ? `${disk}:${path}` : '';
+        }).filter(Boolean).join('; ');
+        const bases1c = Array.from(document.querySelectorAll('input[name="base1c"]:checked')).map(i => i.value).join(', ');
+        const bankServices = Array.from(document.querySelectorAll('input[name="bankService"]:checked')).map(i => i.value).join(', ');
+        const serversAccess = document.getElementById('serversAccess')?.value.trim() || '';
+        const mainDevices = Array.from(document.querySelectorAll('input[name="mainDevice"]:checked')).map(i => i.value).join(', ');
+        const peripherals = Array.from(document.querySelectorAll('input[name="peripheral"]:checked')).map(i => i.value).join(', ');
+        const simTariff = document.getElementById('simTariff')?.value || '';
+        const equipDesc = document.getElementById('equipDesc')?.value.trim() || '';
+        const returnLocation = document.getElementById('returnLocation')?.value || '';
+        const needIssue = document.querySelector('input[name="needIssue"]:checked') ? 'Да' : 'Нет';
+        const needReturn = document.querySelector('input[name="needReturn"]:checked') ? 'Да' : 'Нет';
+        const computerName = document.getElementById('computerName')?.value.trim() || '';
+        const placeWrite = document.getElementById('placeWrite')?.value.trim() || '';
+
+        return `\nФИО сотрудника: ${fioEmp}\nДолжность: ${posEmp}\nОтдел: ${deptEmp}\nРуководитель: ${mgrEmp}\nДата первого рабочего дня: ${startEmp}\nНаблюдатели: ${obsEmp}\n\nДоступы к сервисам: ${accessServices}\nПочтовая рассылка: ${mailList}\nГруппа Битрикс: ${bitrixGroup}\nСетевые папки: ${netFolders}\nБазы 1С: ${bases1c}\nБанковские сервисы: ${bankServices}\nДоступ к серверам: ${serversAccess}\n\nВыдавать оборудование: ${needIssue}\nСдавать оборудование: ${needReturn}\nИмя компьютера: ${computerName}\nМесто (уточнение): ${placeWrite}\nОсновные устройства: ${mainDevices}\nПериферия: ${peripherals}\nSIM тариф: ${simTariff}\nОписание оборудования: ${equipDesc}\nГде получить: ${document.getElementById('receiveLocation')?.value || ''}\nГде сдавать: ${returnLocation}`;
+    }
+
+    function validateStep1() {
+        const fioVal = document.getElementById('fio')?.value.trim();
+        const summaryVal = summaryInput.value.trim();
+
+        const err = requireValue(fioVal, 'Заполните ФИО')
+            || requireValue(summaryVal, 'Заполните краткое описание');
+        if (err) return err;
+
+        if (currentRequestKey === 'tech_support' || currentRequestKey === 'software_issues') {
+            const detailedEl = document.getElementById('detailedText');
+            if (!detailedEl?.value.trim()) {
+                return 'Заполните детальное описание (до 1000 символов)';
+            }
+            if (!dynamicForm.querySelector('input[name="location"]:checked')) {
+                return 'Выберите местоположение';
+            }
+        }
+
+        if (currentRequestKey === 'hr_new') {
+            const checks = [
+                requireValue(document.getElementById('fioEmployee')?.value, 'Введите ФИО сотрудника'),
+                requireValue(document.getElementById('positionEmployee')?.value, 'Введите должность сотрудника'),
+                requireValue(document.getElementById('departmentEmployee')?.value, 'Укажите отдел (подразделение)'),
+                requireValue(document.getElementById('managerEmployee')?.value, 'Укажите непосредственного руководителя'),
+                requireValue(document.getElementById('startDateEmployee')?.value, 'Укажите дату первого рабочего дня')
+            ];
+            const failed = checks.find(Boolean);
+            if (failed) return failed;
+        }
+
+        return null;
+    }
+
+    async function submitTask() {
+        const tracker = window.PortalTracker;
+        if (tracker?.isTaskSubmitLocked()) return;
+
+        const summaryVal = summaryInput.value.trim();
+        const subcat = subcategorySelect.value;
+        const fioVal = document.getElementById('fio')?.value.trim() || '';
+        let extra = '';
+
+        if (currentRequestKey === 'tech_support' || currentRequestKey === 'software_issues') {
+            extra = buildTechSupportExtra();
+        } else if (currentRequestKey === 'hr_new') {
+            extra = buildHrNewExtra();
+        }
+
+        const taskPayload = {
+            queue: trackerQueue,
+            summary: summaryVal,
+            description: `ФИО заявителя: ${fioVal}\nКатегория: ${requestMap[currentRequestKey]?.title}\nПодкатегория: ${subcat}\n---${extra}`,
+            source: 'web-form',
+            requestType: currentRequestKey
+        };
+
+        tracker?.setButtonLoading(submitBtn, true, 'Отправка…');
+        tracker?.lockTaskSubmit();
+
+        try {
+            const result = await tracker.submitToTracker(taskPayload);
+
+            if (result.demo) {
+                showNotice(dynamicForm, 'Демо-режим backend: заявка принята и не отправлена в продовый Tracker. Окно закроется автоматически.');
+                document.dispatchEvent(new CustomEvent('portal:task-submitted', {
+                    detail: { demo: true, requestType: currentRequestKey }
+                }));
+                window.setTimeout(closeTaskModal, 2500);
+                return;
+            }
+
+            const message = tracker.buildIssueSuccessMessage(result.data);
+            showNotice(dynamicForm, message);
+            document.dispatchEvent(new CustomEvent('portal:task-submitted', {
+                detail: {
+                    issueKey: result.data?.issueKey || result.data?.key,
+                    requestType: currentRequestKey
+                }
+            }));
+            window.setTimeout(closeTaskModal, 3000);
+        } catch (error) {
+            const message = error?.message || 'Не удалось отправить заявку. Попробуйте позже.';
+            showError(dynamicForm, message);
+            if (error?.needsLogin || error?.status === 401) {
+                window.setTimeout(() => {
+                    if (window.PortalAuth?.login) {
+                        window.PortalAuth.login();
+                    }
+                }, 900);
+            }
+            document.dispatchEvent(new CustomEvent('portal:task-failed', {
+                detail: { error: message, requestType: currentRequestKey }
+            }));
+            tracker?.releaseTaskSubmitLock();
+        } finally {
+            tracker?.setButtonLoading(submitBtn, false);
+        }
+    }
+
+    function openTaskModal(requestKey) {
         const cfg = requestMap[requestKey];
         if (!cfg) return;
+
         currentRequestKey = requestKey;
-        modalTitle.innerText = cfg.title;
-        modalDesc.innerText = `Форма «${cfg.title}» — заполните детали, задача будет создана в Яндекс Трекере.`;
-        // Заполняем select
+        modalStep = 1;
+        netFolderCounter = 0;
+        clearError(dynamicForm);
+
+        modalTitle.textContent = cfg.title;
+        modalDesc.textContent = `Форма «${cfg.title}» — заполните детали, задача будет создана в Яндекс Трекере.`;
+
         subcategorySelect.innerHTML = '';
         cfg.options.forEach(opt => {
             const option = document.createElement('option');
@@ -239,19 +437,23 @@
             if (opt === cfg.defaultOpt) option.selected = true;
             subcategorySelect.appendChild(option);
         });
+
         summaryInput.value = '';
-        // description field removed — nothing to reset here
-        // conditional fields container (injected for specific request types)
+        const prefillFio = getAuthPrefillName();
+        document.getElementById('fio').value = prefillFio;
+
         const conditional = document.getElementById('conditionalFields');
         conditional.innerHTML = '';
+
         if (requestKey === 'tech_support' || requestKey === 'software_issues') {
-            // 1) required text field up to 1000 chars
             const df = document.createElement('div');
             df.className = 'form-group';
             const lab = document.createElement('label');
+            lab.htmlFor = 'detailedText';
             lab.textContent = 'Детальное описание (до 1000 символов) *';
             const ta = document.createElement('textarea');
             ta.id = 'detailedText';
+            ta.name = 'detailedText';
             ta.maxLength = 1000;
             ta.required = true;
             ta.rows = 5;
@@ -260,24 +462,20 @@
             df.appendChild(ta);
             conditional.appendChild(df);
 
-            // 2) location selection (single choice)
             const locWrap = document.createElement('div');
             locWrap.className = 'form-group';
-            const locLabel = document.createElement('label');
+            const locLabel = document.createElement('div');
+            locLabel.className = 'location-group-title';
             locLabel.textContent = 'Местоположение *';
             locWrap.appendChild(locLabel);
 
-            const locations = ['Офис Покровский','Таборы','ПВЗ','РЦ','Склад'];
+            const locations = ['Офис Покровский', 'Таборы', 'ПВЗ', 'РЦ', 'Склад'];
             const box = document.createElement('div');
-            box.style.display = 'flex';
-            box.style.flexDirection = 'column';
-            box.style.gap = '0.35rem';
+            box.className = 'location-options';
             locations.forEach((loc, idx) => {
                 const id = `loc_${requestKey}_${idx}`;
                 const el = document.createElement('label');
-                el.style.display = 'inline-flex';
-                el.style.alignItems = 'center';
-                el.style.gap = '0.5rem';
+                el.className = 'location-option';
                 const input = document.createElement('input');
                 input.type = 'radio';
                 input.name = 'location';
@@ -292,264 +490,215 @@
             });
             locWrap.appendChild(box);
             conditional.appendChild(locWrap);
+        } else if (requestKey === 'hr_new') {
+            const sections = [
+                {
+                    title: 'Общая информация о сотруднике',
+                    fields: [
+                        { id: 'fioEmployee', label: 'ФИО сотрудника *', type: 'text', placeholder: 'Полное фамилия, имя и отчество', required: true }
+                    ]
+                },
+                {
+                    title: 'Информация о месте работы',
+                    fields: [
+                        { id: 'positionEmployee', label: 'Должность сотрудника *', type: 'text', placeholder: 'Данные по ЗУП', required: true },
+                        { id: 'departmentEmployee', label: 'Отдел (подразделение) сотрудника *', type: 'text', placeholder: 'Для поиска начните вводить', required: true },
+                        { id: 'managerEmployee', label: 'Непосредственный руководитель сотрудника *', type: 'text', placeholder: 'Для поиска начните вводить', required: true },
+                        { id: 'startDateEmployee', label: 'Дата первого рабочего дня сотрудника *', type: 'date', required: true, note: 'Дата выхода сотрудника к рабочему месту' }
+                    ]
+                },
+                {
+                    title: 'Заинтересованные люди',
+                    fields: [
+                        { id: 'observersEmployee', label: 'Добавьте наблюдателей в заявку', type: 'text', placeholder: 'Для поиска начните вводить', required: false }
+                    ]
+                }
+            ];
+
+            sections.forEach(sec => {
+                const wrap = document.createElement('div');
+                wrap.className = 'form-group';
+                const h = document.createElement('h4');
+                h.className = 'hr-section-title';
+                h.textContent = sec.title;
+                wrap.appendChild(h);
+
+                sec.fields.forEach(field => {
+                    const fg = document.createElement('div');
+                    fg.className = 'form-group';
+                    const lbl = document.createElement('label');
+                    lbl.htmlFor = field.id;
+                    lbl.textContent = field.label;
+                    const inp = document.createElement('input');
+                    inp.type = field.type;
+                    inp.id = field.id;
+                    inp.name = field.id;
+                    if (field.placeholder) inp.placeholder = field.placeholder;
+                    if (field.required) inp.required = true;
+                    fg.appendChild(lbl);
+                    fg.appendChild(inp);
+                    if (field.note) {
+                        const note = document.createElement('div');
+                        note.className = 'field-note';
+                        note.textContent = field.note;
+                        fg.appendChild(note);
+                    }
+                    wrap.appendChild(fg);
+                });
+                conditional.appendChild(wrap);
+            });
         }
-        // Detailed form for "Новый сотрудник"
-        else if (requestKey === 'hr_new') {
-            // Section: Общая информация о сотруднике
-            const sec1 = document.createElement('div');
-            sec1.className = 'form-group';
-            const h1 = document.createElement('h4');
-            h1.textContent = 'Общая информация о сотруднике';
-            h1.style.margin = '0 0 0.5rem 0';
-            h1.style.fontSize = '1.05rem';
-            h1.style.fontWeight = '700';
-            sec1.appendChild(h1);
 
-            const f1 = document.createElement('div');
-            f1.className = 'form-group';
-            const lFio = document.createElement('label');
-            lFio.textContent = 'ФИО сотрудника *';
-            const inpFio = document.createElement('input');
-            inpFio.type = 'text';
-            inpFio.id = 'fioEmployee';
-            inpFio.required = true;
-            inpFio.placeholder = 'Полное фамилия, имя и отчество';
-            f1.appendChild(lFio);
-            f1.appendChild(inpFio);
-            sec1.appendChild(f1);
-            conditional.appendChild(sec1);
-
-            // Section: Информация о месте работы
-            const sec2 = document.createElement('div');
-            sec2.className = 'form-group';
-            const h2 = document.createElement('h4');
-            h2.textContent = 'Информация о месте работы';
-            h2.style.margin = '0.6rem 0 0.5rem 0';
-            h2.style.fontSize = '1.05rem';
-            h2.style.fontWeight = '700';
-            sec2.appendChild(h2);
-
-            const pos = document.createElement('div');
-            pos.className = 'form-group';
-            const lPos = document.createElement('label');
-            lPos.textContent = 'Должность сотрудника *';
-            const inpPos = document.createElement('input');
-            inpPos.type = 'text';
-            inpPos.id = 'positionEmployee';
-            inpPos.required = true;
-            inpPos.placeholder = 'Данные по ЗУП';
-            pos.appendChild(lPos);
-            pos.appendChild(inpPos);
-            sec2.appendChild(pos);
-
-            const dept = document.createElement('div');
-            dept.className = 'form-group';
-            const lDept = document.createElement('label');
-            lDept.textContent = 'Отдел (подразделение) сотрудника *';
-            const inpDept = document.createElement('input');
-            inpDept.type = 'text';
-            inpDept.id = 'departmentEmployee';
-            inpDept.required = true;
-            inpDept.placeholder = 'Для поиска начните вводить';
-            dept.appendChild(lDept);
-            dept.appendChild(inpDept);
-            sec2.appendChild(dept);
-
-            const mgr = document.createElement('div');
-            mgr.className = 'form-group';
-            const lMgr = document.createElement('label');
-            lMgr.textContent = 'Непосредственный руководитель сотрудника *';
-            const inpMgr = document.createElement('input');
-            inpMgr.type = 'text';
-            inpMgr.id = 'managerEmployee';
-            inpMgr.required = true;
-            inpMgr.placeholder = 'Для поиска начните вводить';
-            mgr.appendChild(lMgr);
-            mgr.appendChild(inpMgr);
-            sec2.appendChild(mgr);
-
-            const start = document.createElement('div');
-            start.className = 'form-group';
-            const lStart = document.createElement('label');
-            lStart.textContent = 'Дата первого рабочего дня сотрудника *';
-            const inpStart = document.createElement('input');
-            inpStart.type = 'date';
-            inpStart.id = 'startDateEmployee';
-            inpStart.required = true;
-            start.appendChild(lStart);
-            start.appendChild(inpStart);
-            const note = document.createElement('div');
-            note.style.fontSize = '0.85rem';
-            note.style.color = '#5d7f97';
-            note.style.marginTop = '0.4rem';
-            note.textContent = 'Дата выхода сотрудника к рабочему месту';
-            start.appendChild(note);
-            sec2.appendChild(start);
-
-            conditional.appendChild(sec2);
-
-            // Section: Заинтересованные люди
-            const sec3 = document.createElement('div');
-            sec3.className = 'form-group';
-            const h3 = document.createElement('h4');
-            h3.textContent = 'Заинтересованные люди';
-            h3.style.margin = '0.6rem 0 0.5rem 0';
-            h3.style.fontSize = '1.05rem';
-            h3.style.fontWeight = '700';
-            sec3.appendChild(h3);
-
-            const obsLabel = document.createElement('label');
-            obsLabel.textContent = 'Добавьте наблюдателей в заявку';
-            const obsInput = document.createElement('input');
-            obsInput.type = 'text';
-            obsInput.id = 'observersEmployee';
-            obsInput.placeholder = 'Для поиска начните вводить';
-            sec3.appendChild(obsLabel);
-            sec3.appendChild(obsInput);
-            conditional.appendChild(sec3);
-        }
-        // placeholder для summary
         if (requestKey === 'vm_create') summaryInput.placeholder = 'Напр.: ВМ 4 vCPU, 16GB RAM, 100GB SSD';
         else if (requestKey === 'printer_setup') summaryInput.placeholder = 'Напр.: Настроить принтер в бухгалтерии';
         else summaryInput.placeholder = 'Кратко опишите суть';
-        modalOverlay.classList.add('active');
-        // reset to step 1
-        modalStep = 1;
-        // remove any previous step2 content
-        const prev = document.getElementById('step2Fields'); if (prev) prev.remove();
+
+        const prev = document.getElementById('step2Fields');
+        if (prev) prev.remove();
+
         setModalButtonsForStep(1);
+        openModal(modalOverlay);
+        const fioInput = document.getElementById('fio');
+        const prefersTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+        if (fioInput && !prefersTouch) {
+            fioInput.focus();
+        }
     }
 
-    // Обработка кликов по карточкам заявок
+    document.querySelectorAll('.service-card').forEach(card => {
+        if (!card.getAttribute('aria-label')) {
+            const label = card.getAttribute('data-title')
+                || card.querySelector('.card-title')?.textContent?.trim();
+            if (label) card.setAttribute('aria-label', label);
+        }
+    });
+
     document.querySelectorAll('.service-card:not(.useful-card)').forEach(card => {
-        card.addEventListener('click', (e) => {
+        card.addEventListener('click', () => {
             const reqType = card.getAttribute('data-request-type');
-            const titleAttr = card.getAttribute('data-title') || '';
             if (reqType && requestMap[reqType]) {
-                openTaskModal(reqType, titleAttr);
+                openTaskModal(reqType);
             } else {
-                alert('Тип заявки временно не настроен, обратитесь в support.');
+                showGlobalError('Тип заявки временно не настроен. Обратитесь в IT Support.');
             }
         });
     });
 
-    // Полезные ссылки – обработчики
     document.querySelectorAll('.useful-card').forEach(card => {
-        card.addEventListener('click', (e) => {
+        card.addEventListener('click', () => {
             const useful = card.getAttribute('data-useful');
-            if (useful === 'cmdb') {
-                alert('🔧 Переход в CMDB: узнать оборудование, закреплённое за сотрудником (демо-ссылка).\nРеальный URL: https://cmdb.company.ru');
-                // window.open('https://cmdb.company.ru', '_blank');
-            } else if (useful === 'phonebook') {
-                alert('📞 Справочник телефонов компании (демо).\nРеальный URL: https://phonebook.company.ru');
-            } else if (useful === 'knowledge') {
-                alert('📚 База знаний ИТ: инструкции, гайды, FAQ.\nРеальный URL: https://wiki.company.ru');
+            const url = usefulLinks[useful];
+            if (url) {
+                window.open(url, '_blank', 'noopener,noreferrer');
             }
         });
     });
 
-    function closeModal() { modalOverlay.classList.remove('active'); }
-    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-    modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) closeModal(); });
+    setupModal(modalOverlay, { onClose: resetTaskModalState, onCloseButtonClick: handleCancelClick });
+    cancelBtn.addEventListener('click', handleCancelClick);
 
-    dynamicForm.addEventListener('submit', (e) => {
+    dynamicForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const summaryVal = summaryInput.value.trim();
-        if (!summaryVal) { alert('Заполните краткое описание'); return; }
+        clearError(dynamicForm);
 
-        // STEP 1 -> validate and show step2
-        if (modalStep === 1) {
-            // If current request requires detailedText and location, validate them
-            if (currentRequestKey === 'tech_support' || currentRequestKey === 'software_issues') {
-                const detailedEl = document.getElementById('detailedText');
-                if (!detailedEl || !detailedEl.value.trim()) { alert('Заполните детальное описание (до 1000 символов)'); return; }
-                const loc = dynamicForm.querySelector('input[name="location"]:checked');
-                if (!loc) { alert('Выберите местоположение'); return; }
-            }
-            // Validate fields for 'Новый сотрудник'
-            if (currentRequestKey === 'hr_new') {
-                const fioEmp = document.getElementById('fioEmployee')?.value.trim();
-                const posEmp = document.getElementById('positionEmployee')?.value.trim();
-                const deptEmp = document.getElementById('departmentEmployee')?.value.trim();
-                const mgrEmp = document.getElementById('managerEmployee')?.value.trim();
-                const startEmp = document.getElementById('startDateEmployee')?.value.trim();
-                if (!fioEmp) { alert('Введите ФИО сотрудника'); return; }
-                if (!posEmp) { alert('Введите должность сотрудника'); return; }
-                if (!deptEmp) { alert('Укажите отдел (подразделение)'); return; }
-                if (!mgrEmp) { alert('Укажите непосредственного руководителя'); return; }
-                if (!startEmp) { alert('Укажите дату первого рабочего дня'); return; }
-            }
+        const step1Error = validateStep1();
+        if (step1Error) {
+            showError(dynamicForm, step1Error);
+            return;
+        }
 
-            // render step2
-            renderStep2(currentRequestKey);
+        if (modalStep === 1 && isTwoStepRequest(currentRequestKey)) {
+            renderStep2();
             modalStep = 2;
             setModalButtonsForStep(2);
             return;
         }
 
-        // STEP 2 -> final validation & assemble payload
-        const subcat = subcategorySelect.value;
-        const descDetail = '—';
-        let extra = '';
-        // preserve earlier extras
-        if (currentRequestKey === 'tech_support' || currentRequestKey === 'software_issues') {
-            const detailedVal = document.getElementById('detailedText')?.value.trim() || '';
-            const loc = dynamicForm.querySelector('input[name="location"]:checked')?.value || '';
-            extra = `\nДетали: ${detailedVal}\nМестоположение: ${loc}`;
-        } else if (currentRequestKey === 'hr_new') {
-            const fioEmp = document.getElementById('fioEmployee')?.value.trim() || '';
-            const posEmp = document.getElementById('positionEmployee')?.value.trim() || '';
-            const deptEmp = document.getElementById('departmentEmployee')?.value.trim() || '';
-            const mgrEmp = document.getElementById('managerEmployee')?.value.trim() || '';
-            const startEmp = document.getElementById('startDateEmployee')?.value.trim() || '';
-            const obsEmp = document.getElementById('observersEmployee')?.value.trim() || '';
-            // collect step2 additional fields
-            const accessServices = Array.from(document.querySelectorAll('input[name="accessService"]:checked')).map(i=>i.value).join(', ');
-            const mailList = document.getElementById('mailList')?.value.trim() || '';
-            const bitrixGroup = document.getElementById('bitrixGroup')?.value.trim() || '';
-            const netFolders = Array.from(document.querySelectorAll('.net-folder-item')).map(node=>{
-                const disk = node.querySelector('input[type="radio"]:checked')?.value || '';
-                const path = node.querySelector('input[name="netPath"]')?.value.trim() || '';
-                return `${disk}:${path}`;
-            }).filter(Boolean).join('; ');
-            const bases1c = Array.from(document.querySelectorAll('input[name="base1c"]:checked')).map(i=>i.value).join(', ');
-            const bankServices = Array.from(document.querySelectorAll('input[name="bankService"]:checked')).map(i=>i.value).join(', ');
-            const serversAccess = document.getElementById('serversAccess')?.value.trim() || '';
-            const needIssue = Array.from(document.querySelectorAll('input[name="mainDevice"]:checked')).map(i=>i.value).join(', ');
-            const peripherals = Array.from(document.querySelectorAll('input[name="peripheral"]:checked')).map(i=>i.value).join(', ');
-            const simTariff = document.getElementById('simTariff')?.value || '';
-            const equipDesc = document.getElementById('equipDesc')?.value.trim() || '';
-            const returnLocation = document.getElementById('returnLocation')?.value || '';
-
-            extra = `\nФИО сотрудника: ${fioEmp}\nДолжность: ${posEmp}\nОтдел: ${deptEmp}\nРуководитель: ${mgrEmp}\nДата первого рабочего дня: ${startEmp}\nНаблюдатели: ${obsEmp}\n\nДоступы к сервисам: ${accessServices}\nПочтовая рассылка: ${mailList}\nГруппа Битрикс: ${bitrixGroup}\nСетевые папки: ${netFolders}\nБазы 1С: ${bases1c}\nБанковские сервисы: ${bankServices}\nДоступ к серверам: ${serversAccess}\n\nОсновные устройства: ${needIssue}\nПериферия: ${peripherals}\nSIM тариф: ${simTariff}\nОписание оборудования: ${equipDesc}\nГде получить: ${document.getElementById('receiveLocation')?.value || ''}\nГде сдавать: ${returnLocation}`;
-        }
-
-        const taskPayload = {
-            queue: "ITHELP",
-            summary: summaryVal,
-            description: `Категория: ${requestMap[currentRequestKey]?.title}\nПодкатегория: ${subcat}\n---\n${descDetail}${extra}`,
-            source: "web-form",
-            requestType: currentRequestKey
-        };
-        console.log("✅ Яндекс Трекер: создана задача", taskPayload);
-        alert(`✅ Задача создана в Яндекс Трекере!\n\nТема: ${summaryVal}\nТип: ${requestMap[currentRequestKey]?.title}\nПодкатегория: ${subcat}\n\n(интеграция с API Яндекс Трекера)`);
-        closeModal();
-        dynamicForm.reset();
-        // cleanup step2
-        const step2 = document.getElementById('step2Fields'); if (step2) step2.remove();
-        modalStep = 1;
-        setModalButtonsForStep(1);
+        await submitTask();
     });
 
-    // Password reset modal logic
     const resetBtn = document.getElementById('resetPasswordBtn');
     const pwModal = document.getElementById('pwResetModal');
-    const closePw = document.getElementById('closePwModal');
     const pwForm = document.getElementById('pwResetForm');
+    const pwSubmitBtn = document.getElementById('submitPwResetBtn');
+
+    function resetPwModalState() {
+        pwForm?.reset();
+        clearError(pwForm);
+        window.PortalTracker?.setButtonLoading(pwSubmitBtn, false);
+        window.PortalTracker?.releaseResetSubmitLock();
+    }
+
+    function closePwModal() {
+        closeModalOverlay(pwModal);
+    }
 
     if (resetBtn && pwModal) {
-        resetBtn.addEventListener('click', () => pwModal.classList.add('active'));
+        resetBtn.addEventListener('click', () => {
+            clearError(pwForm);
+            const requesterFio = document.getElementById('requesterFio');
+            if (requesterFio && !requesterFio.value) {
+                requesterFio.value = getAuthPrefillName();
+            }
+            openModal(pwModal);
+        });
     }
-    if (closePw && pwModal) closePw.addEventListener('click', () => pwModal.classList.remove('active'));
-    if (pwModal) pwModal.addEventListener('click', (e) => { if (e.target === pwModal) pwModal.classList.remove('active'); });
 
+    setupModal(pwModal, {
+        closeBtn: document.getElementById('closePwModal'),
+        onClose: resetPwModalState
+    });
+
+    if (pwForm) {
+        pwForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearError(pwForm);
+
+            const tracker = window.PortalTracker;
+            if (tracker?.isResetSubmitLocked()) return;
+
+            const target = document.getElementById('targetFio')?.value.trim();
+            const requester = document.getElementById('requesterFio')?.value.trim();
+            const reason = document.getElementById('resetReason')?.value.trim();
+
+            const err = requireValue(target, 'Введите ФИО, кому сбросить пароль')
+                || requireValue(requester, 'Введите ФИО, кто запрашивает')
+                || requireValue(reason, 'Укажите причину сброса пароля');
+            if (err) {
+                showError(pwForm, err);
+                return;
+            }
+
+            const payload = { target, requester, reason, source: 'web-reset' };
+
+            tracker?.setButtonLoading(pwSubmitBtn, true, 'Отправка…');
+            tracker?.lockResetSubmit();
+
+            try {
+                const result = await tracker.submitPasswordReset(payload);
+
+                if (result.demo) {
+                    showNotice(pwForm, 'Демо-режим backend: запрос принят и не отправлен в продовый Tracker. Окно закроется автоматически.');
+                    window.setTimeout(closePwModal, 2500);
+                    return;
+                }
+
+                showNotice(pwForm, 'Запрос на сброс пароля отправлен.');
+                window.setTimeout(closePwModal, 2500);
+            } catch (error) {
+                const message = error?.message || 'Не удалось отправить запрос. Попробуйте позже.';
+                showError(pwForm, message);
+                if (error?.needsLogin || error?.status === 401) {
+                    window.setTimeout(() => {
+                        if (window.PortalAuth?.login) {
+                            window.PortalAuth.login();
+                        }
+                    }, 900);
+                }
+                tracker?.releaseResetSubmitLock();
+            } finally {
+                tracker?.setButtonLoading(pwSubmitBtn, false);
+            }
+        });
+    }
+}

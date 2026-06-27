@@ -1,0 +1,267 @@
+.section-nav {
+    position: sticky;
+    top: 10px;
+    z-index: 80;
+    margin: 0 0 1.35rem;
+    padding: 0.55rem 0.55rem 0.55rem 0.65rem;
+    border-radius: 14px;
+    border: 1px solid var(--border-soft);
+    background: color-mix(in srgb, var(--surface-card) 85%, transparent);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.section-nav__chips {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0.1rem 0.05rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.section-nav__chips::-webkit-scrollbar {
+    display: none;
+    height: 0;
+}
+
+.section-nav__chip[hidden] {
+    display: none !important;
+}
+
+.section-nav__chip {
+    border: 1px solid var(--nav-chip-border);
+    border-radius: 999px;
+    background: var(--nav-chip-bg);
+    color: var(--nav-chip-text);
+    text-decoration: none;
+    font-size: 0.84rem;
+    font-weight: 700;
+    line-height: 1.1;
+    scroll-snap-align: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.72rem;
+    min-height: 40px;
+    white-space: nowrap;
+    transition:
+        transform 0.1s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+        background-color 0.14s linear,
+        color 0.14s linear,
+        border-color 0.14s linear;
+}
+
+.section-nav__chip:hover {
+    transform: translateY(-0.5px);
+    box-shadow: var(--shadow-soft);
+}
+
+.section-nav__chip.is-active {
+    color: var(--nav-chip-active-text);
+    background: var(--nav-chip-active-bg);
+    border-color: transparent;
+}
+
+html.is-programmatic-scroll .section-nav__chips {
+    scroll-snap-type: none;
+}
+
+html.is-programmatic-scroll .section-nav__chip:hover {
+    transform: none;
+}
+
+.theme-toggle {
+    border: 1px solid var(--nav-chip-border);
+    border-radius: 999px;
+    background: var(--surface-card);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.48rem 0.7rem;
+    font-size: 0.83rem;
+    font-weight: 700;
+    min-height: 40px;
+    transition:
+        transform 0.1s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+        background-color 0.14s linear,
+        color 0.14s linear,
+        border-color 0.14s linear;
+}
+
+.section-reset-btn {
+    min-height: 40px;
+    padding: 0.48rem 0.8rem;
+    white-space: nowrap;
+    justify-content: center;
+}
+
+.theme-toggle:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-soft);
+}
+
+.theme-toggle__icon {
+    font-size: 0.92rem;
+}
+
+.section-group {
+    scroll-margin-top: 94px;
+}
+
+@media (max-width: 1023px) {
+    .section-nav {
+        top: max(8px, env(safe-area-inset-top));
+        padding: 0.52rem;
+        gap: 0;
+    }
+
+    .section-nav__chips {
+        width: 100%;
+    }
+
+    .section-nav__chip {
+        min-height: 42px;
+        padding: 0.55rem 0.8rem;
+        font-size: 0.82rem;
+    }
+
+    .theme-toggle {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+@media (max-width: 680px) {
+    .section-nav {
+        top: max(8px, env(safe-area-inset-top));
+        padding: 0.55rem;
+    }
+
+    .section-nav__chips {
+        padding-bottom: 0.05rem;
+        mask-image: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 16px), transparent 100%);
+    }
+
+    .theme-toggle__label {
+        display: none;
+    }
+
+    .theme-toggle {
+        width: 44px;
+        min-width: 44px;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+@media (min-width: 1280px) {
+    .section-nav {
+        position: static;
+        top: auto;
+        margin-bottom: 1.5rem;
+        padding: 0.6rem 0.65rem;
+    }
+
+    .section-nav__chips {
+        overflow-x: visible;
+        scroll-snap-type: none;
+        flex-wrap: wrap;
+    }
+
+    .section-nav__chip {
+        min-height: 42px;
+        padding: 0.52rem 0.82rem;
+        scroll-snap-align: none;
+    }
+
+    .section-group {
+        scroll-margin-top: 24px;
+    }
+}
+
+.scroll-to-top {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(20px, env(safe-area-inset-bottom));
+    z-index: 90;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--surface-card) 92%, transparent);
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-soft);
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition:
+        opacity 0.18s ease,
+        visibility 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.12s ease,
+        border-color 0.12s ease,
+        color 0.12s ease;
+}
+
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .scroll-to-top {
+        background: rgba(255, 255, 255, 0.92);
+    }
+
+    [data-theme="dark"] .scroll-to-top {
+        background: rgba(23, 27, 36, 0.92);
+    }
+}
+
+.scroll-to-top.is-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.scroll-to-top:hover {
+    color: var(--accent-deep);
+    border-color: color-mix(in srgb, var(--accent-deep) 28%, var(--border-subtle));
+    box-shadow: var(--shadow-medium);
+}
+
+.scroll-to-top:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-outline), var(--shadow-medium);
+}
+
+.scroll-to-top__icon {
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+@media (min-width: 1280px) {
+    .scroll-to-top {
+        right: max(24px, env(safe-area-inset-right));
+        bottom: max(28px, env(safe-area-inset-bottom));
+        width: 46px;
+        height: 46px;
+    }
+}
+

@@ -1,79 +1,59 @@
+/** Вспомогательные функции валидации и отображения ошибок форм. */
+window.PortalForm = (function () {
+    function ensureErrorEl(form) {
+        let el = form.querySelector('.form-error');
+        if (!el) {
+            el = document.createElement('div');
+            el.className = 'form-error';
+            el.setAttribute('role', 'alert');
+            el.setAttribute('aria-live', 'polite');
+            const actions = form.querySelector('.modal-actions');
+            if (actions) {
+                form.insertBefore(el, actions);
+            } else {
+                form.appendChild(el);
+            }
+        }
+        return el;
+    }
 
-// Form helpers (equipment-related fields were removed)
-// Добавлена отправка данных формы сброса пароля в трекер через webhook.
-document.addEventListener('DOMContentLoaded', () => {
-	const pwForm = document.getElementById('pwResetForm');
-	const pwModal = document.getElementById('pwResetModal');
-	const closeBtn = document.getElementById('closePwModal');
+    function showError(form, message) {
+        const el = ensureErrorEl(form);
+        el.className = 'form-error';
+        el.textContent = message;
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
 
-	closeBtn?.addEventListener('click', () => {
-		pwModal.classList.remove('active');
-	});
+    function showNotice(form, message) {
+        const el = ensureErrorEl(form);
+        el.className = 'form-notice';
+        el.textContent = message;
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
 
-	pwForm?.addEventListener('submit', async (e) => {
-		e.preventDefault();
-		const targetFio = document.getElementById('targetFio').value.trim();
-		const requesterFio = document.getElementById('requesterFio').value.trim();
-		const resetReason = document.getElementById('resetReason').value.trim();
+    function clearError(form) {
+        const el = form.querySelector('.form-error, .form-notice');
+        if (el) el.textContent = '';
+    }
 
-		if (!targetFio || !requesterFio || !resetReason) {
-			alert('Заполните все обязательные поля.');
-			return;
-		}
+    function requireValue(value, message) {
+        return value?.trim() ? null : message;
+    }
 
-		// Подключение реального webhook трекера.
-		// URL и токен можно указать в index.html или сохранить в localStorage.
-		let webhookUrl = window.TRACKER_WEBHOOK_URL || localStorage.getItem('TRACKER_WEBHOOK_URL');
-		let webhookToken = window.TRACKER_WEBHOOK_TOKEN || localStorage.getItem('TRACKER_WEBHOOK_TOKEN');
-		const authType = window.TRACKER_WEBHOOK_AUTH_TYPE || 'OAuth';
+    function clearGlobalNotice() {
+        const el = document.getElementById('portalGlobalNotice');
+        if (!el) return;
+        el.textContent = '';
+        el.className = 'portal-global-notice hidden';
+    }
 
-		if (!webhookUrl) {
-			const entered = prompt('Введите URL webhook для трекера (или вставьте сюда):');
-			if (!entered) { alert('Webhook URL не указан. Операция отменена.'); return; }
-			webhookUrl = entered;
-			window.TRACKER_WEBHOOK_URL = entered;
-			localStorage.setItem('TRACKER_WEBHOOK_URL', entered);
-		}
+    function showGlobalError(message) {
+        const el = document.getElementById('portalGlobalNotice');
+        if (!el) return;
+        el.textContent = message;
+        el.className = 'portal-global-notice portal-global-notice--error';
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
 
-		if (!webhookToken) {
-			const enteredToken = prompt('Введите токен webhook для трекера (или вставьте сюда):');
-			if (!enteredToken) { alert('Токен не указан. Операция отменена.'); return; }
-			webhookToken = enteredToken;
-			window.TRACKER_WEBHOOK_TOKEN = enteredToken;
-			localStorage.setItem('TRACKER_WEBHOOK_TOKEN', enteredToken);
-		}
-
-		const payload = {
-			title: `Сброс пароля — ${targetFio}`,
-			description: `Кому: ${targetFio}\nКто запрашивает: ${requesterFio}\n\nПричина:\n${resetReason}`,
-			requester: requesterFio,
-			type: 'pw_reset'
-		};
-
-		try {
-			const headers = { 'Content-Type': 'application/json' };
-			if (webhookToken) headers['Authorization'] = `${authType} ${webhookToken}`;
-
-			console.log('Sending webhook to', webhookUrl, 'authType', authType, 'payload', payload);
-			const resp = await fetch(webhookUrl, {
-				method: 'POST',
-				headers,
-				body: JSON.stringify(payload),
-				mode: 'cors'
-			});
-
-			if (!resp.ok) {
-				const text = await resp.text().catch(()=>resp.statusText);
-				throw new Error(`${resp.status} ${resp.statusText}: ${text}`);
-			}
-
-			alert('Заявка успешно отправлена в трекер.');
-			pwForm.reset();
-			pwModal.classList.remove('active');
-		} catch (err) {
-			console.error('Webhook error', err);
-			alert('Ошибка при отправке заявки: ' + err.message + '\n' +
-				'Проверьте URL webhook, токен и настройки CORS/доступа на стороне сервера.');
-		}
-	});
-});
+    return { showError, showNotice, clearError, requireValue, showGlobalError, clearGlobalNotice };
+})();

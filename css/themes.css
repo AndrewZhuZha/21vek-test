@@ -1,0 +1,46 @@
+[data-theme="dark"] {
+    --surface-page: #0d0f14;
+    --surface-card: #171b24;
+    --surface-card-soft: #1c2130;
+    --surface-elevated: #171b24;
+    --surface-muted: #202635;
+
+    --text-primary: #eef0f4;
+    --text-secondary: #f4dfff;
+    --text-muted: #a7b0c3;
+    --text-accent: #9cc6de;
+
+    --border-subtle: rgba(148, 163, 184, 0.26);
+    --border-soft: rgba(148, 163, 184, 0.16);
+    --border-brand-soft: rgba(112, 89, 156, 0.42);
+
+    --overlay-bg: rgba(0, 0, 0, 0.72);
+
+    --shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.36);
+    --shadow-medium: 0 14px 34px rgba(0, 0, 0, 0.42);
+    --shadow-strong: 0 24px 42px rgba(0, 0, 0, 0.46);
+    --shadow-modal: 0 34px 70px rgba(0, 0, 0, 0.58);
+
+    --focus-outline: 0 0 0 3px rgba(255, 31, 122, 0.34);
+
+    --nav-chip-bg: #1b2130;
+    --nav-chip-text: #d8deed;
+    --nav-chip-border: rgba(148, 163, 184, 0.36);
+
+    --watermark-opacity: 0.06;
+    --blob-opacity: 0.24;
+
+    --scrollbar-thumb: color-mix(in srgb, var(--text-muted) 48%, transparent);
+    --scrollbar-thumb-hover: color-mix(in srgb, var(--accent-pink-start) 42%, var(--text-muted) 22%);
+
+    --selection-bg: color-mix(in srgb, var(--accent-pink-start) 42%, var(--accent-deep) 18%);
+    --selection-color: #ffffff;
+}
+
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+    [data-theme="dark"] {
+        --scrollbar-thumb: rgba(167, 176, 195, 0.48);
+        --scrollbar-thumb-hover: rgba(255, 31, 122, 0.52);
+        --selection-bg: rgba(255, 31, 122, 0.38);
+    }
+}

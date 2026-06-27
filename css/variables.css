@@ -1,0 +1,79 @@
+:root {
+    --space-1: 0.25rem;
+    --space-2: 0.35rem;
+    --space-3: 0.5rem;
+    --space-4: 0.75rem;
+    --space-5: 1rem;
+    --space-6: 1.35rem;
+    --space-7: 2rem;
+    --space-8: 2.4rem;
+
+    --text-xs: 0.7rem;
+    --text-sm: 0.8rem;
+    --text-base: 0.9rem;
+    --text-md: 1rem;
+    --text-lg: 1.05rem;
+    --text-xl: 1.1rem;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+    --radius-xl: 14px;
+    --radius-full: 999px;
+
+    --accent-pink-start: #ff1f7a;
+    --accent-pink-end: #ff7350;
+    --accent-deep: #c4006b;
+
+    --surface-page: #f6f7f9;
+    --surface-card: #ffffff;
+    --surface-card-soft: #f8f5ff;
+    --surface-elevated: #ffffff;
+    --surface-muted: #f3f4f6;
+
+    --text-primary: #111827;
+    --text-secondary: #3b2a4a;
+    --text-muted: #6b7280;
+    --text-accent: #2c5a74;
+
+    --border-subtle: rgba(16, 24, 40, 0.08);
+    --border-soft: rgba(16, 24, 40, 0.04);
+    --border-brand-soft: rgba(221, 212, 255, 0.8);
+
+    --overlay-bg: rgba(0, 0, 0, 0.5);
+
+    --shadow-soft: 0 6px 18px rgba(16, 24, 40, 0.04);
+    --shadow-medium: 0 10px 30px rgba(16, 24, 40, 0.06);
+    --shadow-strong: 0 20px 30px rgba(16, 24, 40, 0.06);
+    --shadow-modal: 0 30px 60px rgba(2, 6, 23, 0.25);
+
+    --focus-outline: 0 0 0 3px rgba(196, 0, 107, 0.25);
+
+    --nav-chip-bg: #ffffff;
+    --nav-chip-text: #374151;
+    --nav-chip-border: rgba(16, 24, 40, 0.08);
+    --nav-chip-active-bg: linear-gradient(90deg, var(--accent-pink-start), var(--accent-pink-end));
+    --nav-chip-active-text: #ffffff;
+
+    --watermark-opacity: 0.045;
+    --blob-opacity: 0.22;
+
+    --theme-switch-duration: 140ms;
+    --theme-switch-ease: cubic-bezier(0.3, 0.9, 0.4, 1);
+
+    --scrollbar-size: 8px;
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: color-mix(in srgb, var(--text-muted) 42%, transparent);
+    --scrollbar-thumb-hover: color-mix(in srgb, var(--accent-deep) 52%, var(--text-muted) 18%);
+
+    --selection-bg: color-mix(in srgb, var(--accent-pink-start) 26%, var(--accent-pink-end) 10%);
+    --selection-color: var(--text-primary);
+}
+
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+    :root {
+        --scrollbar-thumb: rgba(107, 114, 128, 0.42);
+        --scrollbar-thumb-hover: rgba(196, 0, 107, 0.45);
+        --selection-bg: rgba(255, 31, 122, 0.22);
+    }
+}
