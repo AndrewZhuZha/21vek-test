@@ -1,10 +1,23 @@
 import crypto from 'crypto';
 import { config } from '../config.js';
+import { yandexFetch } from './yandexFetch.js';
 
 const YANDEX_AUTHORIZE_URL = 'https://oauth.yandex.ru/authorize';
 const YANDEX_TOKEN_URL = 'https://oauth.yandex.ru/token';
 const YANDEX_USERINFO_URL = 'https://login.yandex.ru/info';
-const OAUTH_SCOPES = ['login:email', 'login:info', 'login:avatar'];
+const BASE_OAUTH_SCOPES = ['login:email', 'login:info', 'login:avatar'];
+const DIRECTORY_OAUTH_SCOPES = [
+    'directory:read_organization',
+    'directory:read_users',
+    'directory:read_departments'
+];
+
+function getOAuthScopes() {
+    if (!config.yandex360UseDirectory) {
+        return BASE_OAUTH_SCOPES;
+    }
+    return [...BASE_OAUTH_SCOPES, ...DIRECTORY_OAUTH_SCOPES];
+}
 
 /**
  * @returns {string}
@@ -21,7 +34,7 @@ export function buildAuthorizeUrl(state) {
         response_type: 'code',
         client_id: config.yandexClientId,
         redirect_uri: config.redirectUri,
-        scope: OAUTH_SCOPES.join(' '),
+        scope: getOAuthScopes().join(' '),
         state
     });
     return `${YANDEX_AUTHORIZE_URL}?${params.toString()}`;
@@ -39,13 +52,13 @@ export async function exchangeCodeForToken(code) {
         client_secret: config.yandexClientSecret
     });
 
-    const response = await fetch(YANDEX_TOKEN_URL, {
+    const response = await yandexFetch(YANDEX_TOKEN_URL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             Accept: 'application/json'
         },
-        body
+        body: body.toString()
     });
 
     const data = await response.json().catch(() => ({}));
@@ -66,7 +79,7 @@ export async function exchangeCodeForToken(code) {
  * @returns {Promise<Record<string, unknown>>}
  */
 export async function fetchUserInfo(accessToken) {
-    const response = await fetch(`${YANDEX_USERINFO_URL}?format=json`, {
+    const response = await yandexFetch(`${YANDEX_USERINFO_URL}?format=json`, {
         headers: {
             Authorization: `OAuth ${accessToken}`,
             Accept: 'application/json'
@@ -83,24 +96,46 @@ export async function fetchUserInfo(accessToken) {
 }
 
 /**
+ * @param {unknown} avatarId
+ * @param {boolean} [isAvatarEmpty]
+ * @returns {string | null}
+ */
+export function buildYandexAvatarUrl(avatarId, isAvatarEmpty = false) {
+    if (isAvatarEmpty) {
+        return null;
+    }
+
+    const id = String(avatarId ?? '').trim();
+    if (!id || id === '0/0-0') {
+        return null;
+    }
+
+    // Yandex avatar id: "1234567890/abcdef0123456789"
+    if (!/^[\w./-]+$/.test(id)) {
+        return null;
+    }
+
+    return `https://avatars.yandex.net/get-yapic/${id}/islands-200`;
+}
+
+/**
  * @param {Record<string, unknown>} profile
- * @returns {{ displayName: string, email: string, login: string, avatarUrl: string | null }}
+ * @returns {{ displayName: string, email: string, login: string, avatarUrl: string | null, position: string | null, department: string | null }}
  */
 export function normalizeUserProfile(profile) {
     const login = String(profile.login || profile.default_email || '').trim();
     const email = String(profile.default_email || profile.login || '').trim();
     const displayName = String(profile.real_name || profile.display_name || login || email).trim();
-    const avatarId = profile.default_avatar_id;
-
-    let avatarUrl = null;
-    if (avatarId && typeof avatarId === 'string') {
-        avatarUrl = `https://avatars.yandex.net/get-yapic/${avatarId}/islands-200`;
-    }
+    const isAvatarEmpty = profile.is_avatar_empty === true;
+    const avatarUrl = buildYandexAvatarUrl(profile.default_avatar_id, isAvatarEmpty);
+    const position = String(profile.position || profile.job_title || profile.title || '').trim() || null;
 
     return {
         displayName,
         email,
         login,
-        avatarUrl
+        avatarUrl,
+        position,
+        department: null
     };
 }

@@ -19,6 +19,10 @@
 | Security headers (`helmet`) | `backend/src/index.js` | Clickjacking, MIME sniffing, часть XSS-векторов |
 | Payload validation | `backend/src/tracker/validate.js` | Мусорные/вредоносные payload |
 | Production hardening `/api/auth/config-check` | `backend/src/routes/auth.js` | Лишняя утечка конфигурации |
+| `validateSecurityConfig()` | `backend/src/config.js` | Небезопасный production (TLS bypass, короткий SESSION_SECRET, http PUBLIC_URL) |
+| OAuth token не хранится в сессии | `backend/src/session.js`, `backend/src/routes/auth.js` | Утечка Yandex bearer token при компрометации сессии |
+| Session regeneration после OAuth | `backend/src/routes/auth.js` | Session fixation |
+| Whitelist avatar URL | `backend/src/auth/yandex.js`, `js/auth/ui.js` | Подмена src аватара |
 
 ## 3. Переменные окружения
 
@@ -28,6 +32,9 @@
 YANDEX_CLIENT_ID=
 YANDEX_CLIENT_SECRET=
 SESSION_SECRET=
+SESSION_STORE=memory
+SESSION_REDIS_URL=
+REQUEST_LOGGING=true
 ALLOWED_EMAIL_DOMAIN=21vek.by
 TRACKER_DEMO_MODE=true
 GUEST_REQUEST_TYPES=
@@ -38,8 +45,11 @@ PUBLIC_URL=http://localhost:3000
 Рекомендации:
 
 - `SESSION_SECRET`: минимум 32 случайных байта.
+- `SESSION_STORE`: `memory` (single-instance) или `redis` (рекомендуется для production).
+- `REQUEST_LOGGING=true`: включает structured request logging с `X-Request-Id`.
 - `TRACKER_DEMO_MODE=true` для test-стенда до подключения реального Tracker API.
-- `GUEST_REQUEST_TYPES` оставлять пустым, пока не утверждён whitelist.
+- `YANDEX_OAUTH_TLS_INSECURE=true` — только для локальной разработки за корп. прокси; в production сервер не стартует.
+- `YANDEX360_USE_DIRECTORY=true` — должность подтягивается один раз при входе, OAuth-токен в сессию не сохраняется.
 
 ## 4. Деплой-требования
 

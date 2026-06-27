@@ -37,9 +37,15 @@ function buildEnv(map) {
         'YANDEX_CLIENT_ID',
         'YANDEX_CLIENT_SECRET',
         'SESSION_SECRET',
+        'SESSION_STORE',
+        'SESSION_REDIS_URL',
+        'REQUEST_LOGGING',
         'ALLOWED_EMAIL_DOMAIN',
         'TRACKER_DEMO_MODE',
         'GUEST_REQUEST_TYPES',
+        'YANDEX_OAUTH_TLS_INSECURE',
+        'YANDEX360_USE_DIRECTORY',
+        'YANDEX360_ORG_ID',
         'PORT',
         'PUBLIC_URL'
     ];
@@ -70,6 +76,15 @@ const env = new Map(existing);
 if (!env.get('SESSION_SECRET')) {
     env.set('SESSION_SECRET', generateSessionSecret());
 }
+if (!env.get('SESSION_STORE')) {
+    env.set('SESSION_STORE', 'memory');
+}
+if (!env.has('SESSION_REDIS_URL')) {
+    env.set('SESSION_REDIS_URL', '');
+}
+if (!env.get('REQUEST_LOGGING')) {
+    env.set('REQUEST_LOGGING', 'true');
+}
 if (!env.get('ALLOWED_EMAIL_DOMAIN')) {
     env.set('ALLOWED_EMAIL_DOMAIN', '21vek.by');
 }
@@ -78,6 +93,15 @@ if (!env.get('TRACKER_DEMO_MODE')) {
 }
 if (!env.has('GUEST_REQUEST_TYPES')) {
     env.set('GUEST_REQUEST_TYPES', '');
+}
+if (!env.has('YANDEX360_ORG_ID')) {
+    env.set('YANDEX360_ORG_ID', '');
+}
+if (!env.get('YANDEX360_USE_DIRECTORY')) {
+    env.set('YANDEX360_USE_DIRECTORY', 'true');
+}
+if (!env.get('YANDEX_OAUTH_TLS_INSECURE')) {
+    env.set('YANDEX_OAUTH_TLS_INSECURE', 'false');
 }
 if (!env.get('PORT')) {
     env.set('PORT', '3000');
@@ -95,7 +119,8 @@ console.log('2. Создайте приложение типа «Веб-серв
 console.log('3. Redirect URI (добавьте оба при необходимости):');
 console.log(`   Dev:  ${redirectUri}`);
 console.log('   Prod: https://<ваш-домен-портала>/api/auth/callback');
-console.log('4. Scopes: login:email, login:info, login:avatar');
+console.log('4. Scopes: login:email, login:info, login:avatar, directory:read_organization, directory:read_users, directory:read_departments');
+console.log('   YANDEX360_ORG_ID можно оставить пустым — orgId определится автоматически');
 console.log('5. Скопируйте Client ID и Client Secret в backend/.env\n');
 
 const configured = Boolean(env.get('YANDEX_CLIENT_ID') && env.get('YANDEX_CLIENT_SECRET'));

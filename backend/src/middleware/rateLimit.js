@@ -20,6 +20,8 @@ function createLimiter(windowMs, max, keyGenerator) {
 export const authLoginLimiter = createLimiter(15 * 60 * 1000, 20);
 export const authCallbackLimiter = createLimiter(15 * 60 * 1000, 30);
 export const authLogoutLimiter = createLimiter(15 * 60 * 1000, 20);
+export const authMeLimiter = createLimiter(60 * 1000, 60);
+export const authConfigCheckLimiter = createLimiter(60 * 1000, 60);
 
 export const trackerIpLimiter = createLimiter(60 * 1000, 10);
 export const trackerSessionLimiter = createLimiter(

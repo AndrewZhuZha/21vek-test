@@ -128,6 +128,8 @@ auth: {
 }
 ```
 
+`guestRequestTypes` на frontend подтягиваются из backend при старте (`GET /api/auth/config-check`). Источник правды для whitelist — `GUEST_REQUEST_TYPES` в `backend/.env` (через запятую, например `tech_support,hr_new`).
+
 Для локальной разработки **без** OAuth создайте `js/config.local.js`:
 
 ```javascript
@@ -192,6 +194,8 @@ location / {
 | `503` при клике «Войти» | Не заполнены `YANDEX_CLIENT_ID` / `YANDEX_CLIENT_SECRET` в `.env` |
 | Доступ запрещён для своей учётки | Email должен оканчиваться на `@21vek.by` (см. `ALLOWED_EMAIL_DOMAIN`) |
 | `invalid_state` | Повторите вход; не открывайте callback URL вручную |
+| `403 CSRF-проверка не пройдена` при submit/logout | `PUBLIC_URL` должен совпадать с адресом в браузере; в dev допустимы `localhost` и `127.0.0.1` на одном порту |
+| `fetch failed` после входа в Yandex | Корпоративный SSL-прокси: задайте `YANDEX_OAUTH_TLS_INSECURE=true` в `backend/.env` (только dev) или добавьте корневой сертификат через `NODE_EXTRA_CA_CERTS` |
 
 ---
 
@@ -203,7 +207,7 @@ location / {
 | `/api/auth/callback` | GET | Обработка code, redirect на `/` |
 | `/api/auth/me` | GET | `{ displayName, email, login, avatarUrl }` или 401 |
 | `/api/auth/logout` | POST | `{ ok: true }` |
-| `/api/auth/config-check` | GET | Dev: `{ configured, redirectUri, allowedEmailDomain }`, Prod: `{ configured }` |
+| `/api/auth/config-check` | GET | Dev: `{ configured, guestRequestTypes, trackerDemoMode, redirectUri, allowedEmailDomain }`, Prod: `{ configured, guestRequestTypes, trackerDemoMode }` |
 | `/api/tracker/issues` | POST | `401` без сессии, `issueKey` в demo/proxy режиме |
 | `/api/tracker/password-reset` | POST | `401` без сессии, `issueKey` в demo/proxy режиме |
 | `/api/health` | GET | `{ ok: true, service: '21vek-it-portal' }` |
