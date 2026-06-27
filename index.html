@@ -20,9 +20,19 @@
     <link rel="stylesheet" href="css/modal.css">
     <link rel="stylesheet" href="css/mobile.css">
     <link rel="stylesheet" href="css/tour.css">
+    <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
 <a class="skip-link" href="#section-support">Перейти к содержимому</a>
+<div id="portalAuthGate" class="portal-auth-gate hidden" role="main" aria-labelledby="portalAuthGateTitle">
+    <div class="portal-auth-gate__panel">
+        <p class="portal-auth-gate__brand" id="portalTaglineGate">IT-Support · 21VEK</p>
+        <h1 class="portal-auth-gate__title" id="portalAuthGateTitle">ИТ-портал 21Vek</h1>
+        <p class="portal-auth-gate__desc">Войдите корпоративной учётной записью Яндекс (@21vek.by), чтобы продолжить.</p>
+        <p id="portalAuthGateError" class="portal-auth-gate__error hidden" role="alert"></p>
+        <button type="button" id="portalAuthLoginBtn" class="btn-primary portal-auth-gate__btn">Войти через Яндекс</button>
+    </div>
+</div>
 <div id="portalGlobalNotice" class="portal-global-notice hidden" role="alert" aria-live="assertive" aria-atomic="true"></div>
 <div id="portalSoonTip" class="portal-soon-tip hidden" role="tooltip" aria-hidden="true">скоро</div>
 <div class="page-bg" aria-hidden="true">
@@ -67,6 +77,18 @@
                             <span class="theme-toggle__icon" aria-hidden="true">🌙</span>
                             <span class="theme-toggle__label">Тема</span>
                         </button>
+                        <button type="button" id="portalAuthLoginHeaderBtn" class="header-link-btn portal-auth-login-header hidden">Войти</button>
+                        <div id="portalAuthUser" class="portal-auth-user hidden">
+                            <button type="button" id="portalAuthUserBtn" class="portal-auth-user__btn" aria-haspopup="true" aria-expanded="false" aria-label="Меню пользователя">
+                                <img id="portalAuthAvatar" class="portal-auth-user__avatar hidden" alt="" width="32" height="32">
+                                <span id="portalAuthAvatarInitials" class="portal-auth-user__avatar portal-auth-user__avatar--initials hidden" aria-hidden="true"></span>
+                                <span id="portalAuthName" class="portal-auth-user__name"></span>
+                            </button>
+                            <div id="portalAuthMenu" class="portal-auth-menu hidden" role="menu">
+                                <p id="portalAuthEmail" class="portal-auth-menu__email"></p>
+                                <button type="button" id="portalAuthLogoutBtn" class="btn-secondary portal-auth-menu__logout" role="menuitem">Выйти</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -288,6 +310,9 @@
                     <a class="footer-meta-link" data-support-mail data-mail-subject="ИТ-портал — обращение" href="mailto:itsupport@21vek.by">itsupport@21vek.by</a>
                     <span class="footer-meta-item">© 2026 IT Support 21vek</span>
                 </div>
+                <p class="footer-stats hidden" id="portalRequestStats" aria-live="polite">
+                    Заявок через портал: <span class="footer-stats__value" id="portalRequestStatsValue">0</span>
+                </p>
                 <p class="footer-caption">Карточка открывает заявку, «Полезное» ведет на внешние сервисы.</p>
             </div>
         </div>
@@ -355,6 +380,9 @@
 
 <script src="js/config.js"></script>
 <script src="js/config.local.js"></script>
+<script src="js/auth/index.js"></script>
+<script src="js/auth/gate.js"></script>
+<script src="js/auth/ui.js"></script>
 <script src="js/modal.js"></script>
 <script src="js/form.js"></script>
 <script src="js/tracker.js"></script>
@@ -365,6 +393,7 @@
 <script src="js/cards.js"></script>
 <script src="js/request-types.js"></script>
 <script src="js/app.js"></script>
+<script src="js/request-stats.js"></script>
 <script src="js/tour/storage.js"></script>
 <script src="js/tour/steps.js"></script>
 <script src="js/tour/spotlight.js"></script>

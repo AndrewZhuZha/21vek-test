@@ -21,5 +21,19 @@ window.PortalConfigLocal = {
     //     enabled: true,
     //     autoStart: true,
     //     showReplayButton: true
+    // },
+    // requestStats: {
+    //     enabled: true,
+    //     apiUrl: '/api/tracker/stats',
+    //     seedCount: 0
+    // },
+    // auth: {
+    //     enabled: false,
+    //     guestRequestTypes: []
+    // },
+    // Или для разработки UI без gate:
+    // auth: {
+    //     requireAuth: false,
+    //     guestRequestTypes: []
     // }
 };

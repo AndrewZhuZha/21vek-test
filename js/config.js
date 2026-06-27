@@ -45,6 +45,25 @@ window.PortalConfig = {
         autoStart: true,
         replayButtonSelector: '#tourReplayBtn',
         replayButtonLabel: 'Показать тур'
+    },
+    /** Счётчик заявок в подвале (js/request-stats.js). */
+    requestStats: {
+        enabled: true,
+        seedCount: 0,
+        /** GET endpoint backend-прокси: { total | count | issuesCount }. */
+        apiUrl: '',
+        localStorageKey: 'portal-request-count-local'
+    },
+    /** Корпоративная авторизация Yandex 360 (js/auth/, backend/). */
+    auth: {
+        enabled: true,
+        requireAuth: true,
+        /** Типы заявок, доступные без входа (пока пусто). */
+        guestRequestTypes: [],
+        autoFillFio: true,
+        loginUrl: '/api/auth/login',
+        logoutUrl: '/api/auth/logout',
+        userInfoUrl: '/api/auth/me'
     }
 };
 
@@ -67,6 +86,18 @@ window.PortalConfig = {
             window.PortalConfig.tour = {
                 ...window.PortalConfig.tour,
                 ...window.PortalConfigLocal.tour
+            };
+        }
+        if (window.PortalConfigLocal.requestStats) {
+            window.PortalConfig.requestStats = {
+                ...window.PortalConfig.requestStats,
+                ...window.PortalConfigLocal.requestStats
+            };
+        }
+        if (window.PortalConfigLocal.auth) {
+            window.PortalConfig.auth = {
+                ...window.PortalConfig.auth,
+                ...window.PortalConfigLocal.auth
             };
         }
     }

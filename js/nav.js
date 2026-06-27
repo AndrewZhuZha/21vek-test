@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let suppressScrollSpy = false;
     let scrollIdleTimer = null;
     let manualScrollRaf = false;
+    let programmaticScrollStartedAt = 0;
+    const PROGRAMMATIC_SCROLL_MIN_MS = 500;
 
     function getScrollBehavior() {
         return reduceMotionMedia.matches ? 'auto' : 'smooth';
@@ -54,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function beginProgrammaticScroll() {
         suppressScrollSpy = true;
+        programmaticScrollStartedAt = performance.now();
         document.documentElement.classList.add('is-programmatic-scroll');
     }
 
@@ -69,19 +72,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return chipLeft >= viewLeft - 2 && chipRight <= viewRight + 2;
     }
 
-    function scrollActiveChipIntoView(sectionId) {
+    function scrollActiveChipIntoView(sectionId, { smooth = false } = {}) {
         const chip = navRegistry.get(sectionId)?.chip;
         if (!chip || chip.hidden || isChipFullyVisible(chip)) return;
 
+        const behavior = smooth && !reduceMotionMedia.matches ? 'smooth' : 'auto';
         chipsRoot.scrollTo({
             left: Math.max(0, chip.offsetLeft - 12),
-            behavior: 'auto'
+            behavior
         });
     }
 
-    function setActive(sectionId, { scrollChip = false } = {}) {
+    function setActive(sectionId, { scrollChip = false, smoothChip = false } = {}) {
         if (!sectionId || activeSectionId === sectionId) {
-            if (scrollChip) scrollActiveChipIntoView(sectionId);
+            if (scrollChip) scrollActiveChipIntoView(sectionId, { smooth: smoothChip });
             return;
         }
 
@@ -91,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             nodes.chip.classList.toggle('is-active', active);
             if (active) {
                 nodes.chip.setAttribute('aria-current', 'true');
-                if (scrollChip) scrollActiveChipIntoView(sectionId);
+                if (scrollChip) scrollActiveChipIntoView(sectionId, { smooth: smoothChip });
             } else {
                 nodes.chip.removeAttribute('aria-current');
             }
@@ -181,12 +185,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!target) return;
 
         beginProgrammaticScroll();
-        setActive(sectionId, { scrollChip: true });
+        setActive(sectionId);
 
         const top = window.scrollY + target.getBoundingClientRect().top - refreshStickyOffset();
         window.scrollTo({
             top: Math.max(0, top),
             behavior: getScrollBehavior()
+        });
+
+        // Horizontal chip scroll after vertical scroll starts — avoids snap fighting page animation.
+        requestAnimationFrame(() => {
+            scrollActiveChipIntoView(sectionId, { smooth: !reduceMotionMedia.matches });
         });
     }
 
@@ -211,6 +220,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function onScrollSettled() {
+        const elapsed = performance.now() - programmaticScrollStartedAt;
+        if (elapsed < PROGRAMMATIC_SCROLL_MIN_MS) {
+            scrollIdleTimer = window.setTimeout(onScrollSettled, PROGRAMMATIC_SCROLL_MIN_MS - elapsed);
+            return;
+        }
+
         suppressScrollSpy = false;
         document.documentElement.classList.remove('is-programmatic-scroll');
         resolveActiveSectionFromScroll();

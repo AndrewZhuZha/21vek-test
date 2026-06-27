@@ -559,6 +559,19 @@ a {
     border-left: 1px solid var(--border-soft);
 }
 
+.footer-stats {
+    margin: 0.42rem 0 0.1rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+}
+
+.footer-stats__value {
+    font-weight: 700;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
 .footer-caption {
     margin-top: 0.32rem;
     font-size: 0.69rem;

@@ -1,5 +1,29 @@
 document.addEventListener('DOMContentLoaded', () => {
+    bootstrapApp();
+});
+
+async function bootstrapApp() {
     const config = window.PortalConfig || {};
+    const auth = window.PortalAuth;
+
+    if (auth?.isEnabled()) {
+        await auth.whenReady();
+        if (auth.isRequired() && !auth.isAuthenticated()) {
+            return;
+        }
+    }
+
+    initPortalApp(config);
+}
+
+function getAuthPrefillName() {
+    const authConfig = window.PortalConfig?.auth || {};
+    if (!authConfig.autoFillFio) return '';
+    const user = window.PortalAuth?.getUser();
+    return user?.displayName || '';
+}
+
+function initPortalApp(config) {
     const { trackerQueue, twoStepRequestTypes, usefulLinks, externalLinks, demoMode } = config;
 
     document.querySelectorAll('[data-portal-link]').forEach(link => {
@@ -357,7 +381,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await tracker.submitToTracker(taskPayload);
 
             if (result.demo) {
-                showNotice(dynamicForm, 'Демо-режим: заявка подготовлена, данные в консоли браузера (F12). Окно закроется автоматически.');
+                showNotice(dynamicForm, 'Демо-режим backend: заявка принята и не отправлена в продовый Tracker. Окно закроется автоматически.');
+                document.dispatchEvent(new CustomEvent('portal:task-submitted', {
+                    detail: { demo: true, requestType: currentRequestKey }
+                }));
                 window.setTimeout(closeTaskModal, 2500);
                 return;
             }
@@ -374,6 +401,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             const message = error?.message || 'Не удалось отправить заявку. Попробуйте позже.';
             showError(dynamicForm, message);
+            if (error?.needsLogin || error?.status === 401) {
+                window.setTimeout(() => {
+                    if (window.PortalAuth?.login) {
+                        window.PortalAuth.login();
+                    }
+                }, 900);
+            }
             document.dispatchEvent(new CustomEvent('portal:task-failed', {
                 detail: { error: message, requestType: currentRequestKey }
             }));
@@ -405,7 +439,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         summaryInput.value = '';
-        document.getElementById('fio').value = '';
+        const prefillFio = getAuthPrefillName();
+        document.getElementById('fio').value = prefillFio;
 
         const conditional = document.getElementById('conditionalFields');
         conditional.innerHTML = '';
@@ -601,6 +636,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (resetBtn && pwModal) {
         resetBtn.addEventListener('click', () => {
             clearError(pwForm);
+            const requesterFio = document.getElementById('requesterFio');
+            if (requesterFio && !requesterFio.value) {
+                requesterFio.value = getAuthPrefillName();
+            }
             openModal(pwModal);
         });
     }
@@ -639,7 +678,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await tracker.submitPasswordReset(payload);
 
                 if (result.demo) {
-                    showNotice(pwForm, 'Демо-режим: запрос подготовлен, данные в консоли (F12). Окно закроется автоматически.');
+                    showNotice(pwForm, 'Демо-режим backend: запрос принят и не отправлен в продовый Tracker. Окно закроется автоматически.');
                     window.setTimeout(closePwModal, 2500);
                     return;
                 }
@@ -649,10 +688,17 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 const message = error?.message || 'Не удалось отправить запрос. Попробуйте позже.';
                 showError(pwForm, message);
+                if (error?.needsLogin || error?.status === 401) {
+                    window.setTimeout(() => {
+                        if (window.PortalAuth?.login) {
+                            window.PortalAuth.login();
+                        }
+                    }, 900);
+                }
                 tracker?.releaseResetSubmitLock();
             } finally {
                 tracker?.setButtonLoading(pwSubmitBtn, false);
             }
         });
     }
-});
+}

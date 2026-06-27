@@ -11,6 +11,37 @@ window.PortalTracker = (function () {
         return window.PortalConfig || {};
     }
 
+    function getGuestRequestTypes() {
+        const guestRequestTypes = getConfig().auth?.guestRequestTypes;
+        if (!Array.isArray(guestRequestTypes)) {
+            return [];
+        }
+        return guestRequestTypes
+            .map((item) => (typeof item === 'string' ? item.trim() : ''))
+            .filter(Boolean);
+    }
+
+    function createAuthError(message) {
+        const error = new Error(message);
+        error.status = 401;
+        error.needsLogin = true;
+        error.loginUrl = getConfig().auth?.loginUrl || '/api/auth/login';
+        return error;
+    }
+
+    function assertCanSubmit(requestType) {
+        const auth = window.PortalAuth;
+        if (auth?.isAuthenticated?.()) {
+            return;
+        }
+
+        if (requestType && getGuestRequestTypes().includes(requestType)) {
+            return;
+        }
+
+        throw createAuthError('Требуется авторизация. Войдите через Яндекс.');
+    }
+
     function getCooldownMs() {
         const value = Number(getConfig().submitCooldownMs);
         return value > 0 ? value : DEFAULT_COOLDOWN_MS;
@@ -108,6 +139,9 @@ window.PortalTracker = (function () {
     }
 
     function extractErrorMessage(data, status) {
+        if (status === 401) {
+            return 'Сессия отсутствует или истекла. Войдите снова.';
+        }
         if (!data) return `Ошибка сервера (${status}). Попробуйте позже.`;
         return data.message || data.error || data.detail || `Ошибка сервера (${status}).`;
     }
@@ -115,6 +149,7 @@ window.PortalTracker = (function () {
     async function postJson(url, payload) {
         const response = await fetch(url, {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json'
@@ -124,7 +159,13 @@ window.PortalTracker = (function () {
 
         const data = await parseResponseBody(response);
         if (!response.ok) {
-            throw new Error(extractErrorMessage(data, response.status));
+            const error = new Error(extractErrorMessage(data, response.status));
+            error.status = response.status;
+            if (response.status === 401) {
+                error.needsLogin = true;
+                error.loginUrl = getConfig().auth?.loginUrl || '/api/auth/login';
+            }
+            throw error;
         }
 
         return data;
@@ -132,11 +173,7 @@ window.PortalTracker = (function () {
 
     async function submitToTracker(payload) {
         const config = getConfig();
-
-        if (config.demoMode) {
-            console.log('Яндекс Трекер (demo): подготовлена задача', payload);
-            return { demo: true, data: null };
-        }
+        assertCanSubmit(payload?.requestType);
 
         const url = config.trackerApiUrl;
         if (!url) {
@@ -149,16 +186,12 @@ window.PortalTracker = (function () {
         };
 
         const data = await postJson(url, body);
-        return { demo: false, data };
+        return { demo: Boolean(data?.demo), data };
     }
 
     async function submitPasswordReset(payload) {
         const config = getConfig();
-
-        if (config.demoMode) {
-            console.log('Password reset request (demo)', payload);
-            return { demo: true, data: null };
-        }
+        assertCanSubmit('password_reset');
 
         const url = config.trackerResetApiUrl || config.trackerApiUrl;
         if (!url) {
@@ -171,7 +204,7 @@ window.PortalTracker = (function () {
         };
 
         const data = await postJson(url, body);
-        return { demo: false, data };
+        return { demo: Boolean(data?.demo), data };
     }
 
     return {

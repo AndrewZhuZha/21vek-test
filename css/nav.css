@@ -71,8 +71,12 @@
     border-color: transparent;
 }
 
-html.is-programmatic-scroll .section-nav__chip {
-    transition: none;
+html.is-programmatic-scroll .section-nav__chips {
+    scroll-snap-type: none;
+}
+
+html.is-programmatic-scroll .section-nav__chip:hover {
+    transform: none;
 }
 
 .theme-toggle {

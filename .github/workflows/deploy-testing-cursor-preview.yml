@@ -39,6 +39,7 @@ jobs:
             --exclude='testing-cursor' \
             preview-source/ site/testing-cursor/
           sed -i 's|<head>|<head>\n    <base href="/21vek-test/testing-cursor/">|' site/testing-cursor/index.html
+          cp site/testing-cursor/js/config.preview.js site/testing-cursor/js/config.local.js
 
       - name: Commit and push to main
         working-directory: site

@@ -1,0 +1,164 @@
+/* Авторизация: gate и блок профиля */
+
+.portal-auth-gated .app-layout {
+    visibility: hidden;
+    pointer-events: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+.portal-auth-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: var(--bg-primary, #f5f7fb);
+}
+
+.portal-auth-gate__panel {
+    width: min(100%, 420px);
+    padding: 2rem 2rem 1.75rem;
+    border-radius: 16px;
+    background: var(--surface-elevated, #fff);
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+    text-align: center;
+}
+
+.portal-auth-gate__brand {
+    font-size: 0.875rem;
+    color: var(--text-muted, #64748b);
+    margin: 0 0 0.5rem;
+}
+
+.portal-auth-gate__title {
+    margin: 0 0 0.75rem;
+    font-size: 1.5rem;
+    line-height: 1.25;
+}
+
+.portal-auth-gate__desc {
+    margin: 0 0 1.5rem;
+    color: var(--text-secondary, #475569);
+    line-height: 1.5;
+}
+
+.portal-auth-gate__error {
+    margin: 0 0 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    background: rgba(220, 38, 38, 0.08);
+    color: #b91c1c;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    text-align: left;
+}
+
+.portal-auth-gate__btn {
+    width: 100%;
+    min-height: 44px;
+    font-size: 1rem;
+}
+
+.portal-auth-user {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.portal-auth-user__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+    border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.12));
+    border-radius: 999px;
+    background: var(--surface-elevated, #fff);
+    cursor: pointer;
+    max-width: 220px;
+}
+
+.portal-auth-user__btn:hover {
+    border-color: var(--accent, #2563eb);
+}
+
+.portal-auth-user__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--accent-soft, #dbeafe);
+    color: var(--accent, #2563eb);
+}
+
+.portal-auth-user__avatar--initials {
+    font-size: 0.7rem;
+}
+
+.portal-auth-user__name {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.portal-auth-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 220px;
+    padding: 0.75rem;
+    border-radius: 12px;
+    background: var(--surface-elevated, #fff);
+    border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.12));
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    z-index: 50;
+}
+
+.portal-auth-menu__email {
+    margin: 0 0 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--text-muted, #64748b);
+    word-break: break-all;
+}
+
+.portal-auth-menu__logout {
+    width: 100%;
+}
+
+.header-search-row .portal-auth-login-header {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .portal-auth-user__name {
+        display: none;
+    }
+
+    .portal-auth-user__btn {
+        padding: 0.25rem;
+    }
+}
+
+[data-theme="dark"] .portal-auth-gate {
+    background: var(--bg-primary, #0f172a);
+}
+
+[data-theme="dark"] .portal-auth-gate__panel,
+[data-theme="dark"] .portal-auth-user__btn,
+[data-theme="dark"] .portal-auth-menu {
+    background: var(--surface-elevated, #1e293b);
+}
