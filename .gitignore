@@ -6,6 +6,5 @@ desktop.ini
 .env.*
 backend/.env
 js/config.local.js
-testing-cursor/js/config.local.js
 backend/node_modules/
 node_modules/

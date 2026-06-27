@@ -96,7 +96,3 @@ PORTAL_URL=https://portal.21vek.by npm run verify:auth
 - `backend/.env` на сервере, права `600`, не в git.
 - `YANDEX_OAUTH_TLS_INSECURE=true` блокируется при `NODE_ENV=production`.
 - Портал закрыт от индексации: `robots.txt`, `<meta robots noindex>`.
-
-## GitHub Pages preview
-
-Ветка `testing-cursor` — статика без backend (`auth.enabled: false` через `config.preview.js`).

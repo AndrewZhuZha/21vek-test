@@ -28,10 +28,7 @@ window.PortalConfig = {
     themeStorageKey: 'portal-theme',
     themeTransitionMs: 140,
     defaultTheme: 'system',
-    /**
-     * Устаревший флаг UI-only preview (GitHub Pages). При работе через backend
-     * demo-режим задаётся переменной TRACKER_DEMO_MODE в backend/.env.
-     */
+    /** UI-only флаг; при работе через backend demo-режим задаётся TRACKER_DEMO_MODE в backend/.env. */
     demoMode: false,
     /** POST endpoint backend-прокси для создания задач в Трекере. */
     trackerApiUrl: '/api/tracker/issues',
