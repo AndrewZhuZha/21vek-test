@@ -4,32 +4,98 @@ import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
 import { config, validateSecurityConfig } from './config.js';
+import { getWikiSnapshotMeta, getWikiConfigState } from './auth/yandexWiki.js';
+import { getWikiCacheDiagnostics } from './middleware/wikiCache.js';
 import { setupSession } from './session.js';
 import { authRouter } from './routes/auth.js';
 import { trackerRouter } from './routes/tracker.js';
+import { wikiRouter } from './routes/wiki.js';
+import { requireAuth } from './middleware/requireAuth.js';
+import { healthLimiter } from './middleware/rateLimit.js';
 
 const app = express();
 
 validateSecurityConfig();
 await setupSession(app);
-app.use(compression());
+app.use(compression({
+    threshold: 1024,
+    filter(req, res) {
+        if (req.headers['x-no-compression']) {
+            return false;
+        }
+        return compression.filter(req, res);
+    }
+}));
+
+app.use((req, res, next) => {
+    const versioned = typeof req.query.v === 'string' && req.query.v.length > 0;
+    if (!versioned) {
+        next();
+        return;
+    }
+    const isVersionedBundle = /\.bundle\.(css|js)$/i.test(req.path);
+    const isVersionedWikiScript = /^\/js\/wiki\//i.test(req.path) && req.path.endsWith('.js');
+    if (!isVersionedBundle && !isVersionedWikiScript) {
+        next();
+        return;
+    }
+    const originalSetHeader = res.setHeader.bind(res);
+    res.setHeader = (name, value) => {
+        if (String(name).toLowerCase() === 'cache-control') {
+            return originalSetHeader(name, 'public, max-age=31536000, immutable');
+        }
+        return originalSetHeader(name, value);
+    };
+    next();
+});
+
 app.use(helmet({
+    hsts: config.isProduction ? { maxAge: 31536000, includeSubDomains: true, preload: false } : false,
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", 'data:', 'https://avatars.yandex.net'],
+            imgSrc: [
+                "'self'",
+                'data:',
+                'https://avatars.yandex.net',
+                'https://wiki.yandex.ru',
+                'https://api.wiki.yandex.net',
+                'https://storage.yandexcloud.net'
+            ],
             connectSrc: ["'self'"],
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
             frameAncestors: ["'none'"],
+            frameSrc: ["'none'"],
+            workerSrc: ["'self'"],
             formAction: ["'self'", 'https://oauth.yandex.ru']
         }
     },
-    crossOriginEmbedderPolicy: false
+    crossOriginEmbedderPolicy: false,
+    permissionsPolicy: {
+        camera: [],
+        microphone: [],
+        geolocation: [],
+        payment: [],
+        usb: []
+    }
 }));
 app.use(express.json({ limit: '100kb' }));
+
+function shouldLogHttpRequest() {
+    if (!config.requestLogging) {
+        return false;
+    }
+    if (config.requestLogSampleRate >= 1) {
+        return true;
+    }
+    if (config.requestLogSampleRate <= 0) {
+        return false;
+    }
+    return Math.random() < config.requestLogSampleRate;
+}
 
 app.use((req, res, next) => {
     const requestId = sanitizeRequestId(req.headers['x-request-id']) || buildRequestId();
@@ -39,7 +105,7 @@ app.use((req, res, next) => {
     res.setHeader('X-Request-Id', requestId);
 
     res.on('finish', () => {
-        if (!config.requestLogging) {
+        if (!shouldLogHttpRequest()) {
             return;
         }
         const durationMs = Number(process.hrtime.bigint() - startedNs) / 1e6;
@@ -58,14 +124,40 @@ app.use((req, res, next) => {
     next();
 });
 
-app.get('/api/health', (_req, res) => {
-    res.json({ ok: true, service: '21vek-it-portal' });
+app.get('/api/health', healthLimiter, (_req, res) => {
+    res.json({
+        ok: true,
+        service: '21vek-it-portal'
+    });
+});
+
+app.get('/api/health/details', requireAuth, async (_req, res) => {
+    const wikiConfig = getWikiConfigState();
+    const wikiSnapshot = await getWikiSnapshotMeta();
+    const wikiCache = getWikiCacheDiagnostics();
+    res.json({
+        ok: true,
+        service: '21vek-it-portal',
+        wiki: {
+            enabled: wikiConfig.enabled,
+            configured: wikiConfig.configured,
+            authMode: wikiConfig.authMode,
+            baseSlug: wikiConfig.baseSlug,
+            snapshot: wikiSnapshot,
+            cache: wikiCache
+        }
+    });
 });
 
 app.use('/api/auth', authRouter);
 app.use('/api/tracker', trackerRouter);
+app.use('/api/wiki', wikiRouter);
 
 const staticRoot = config.projectRoot;
+
+app.use('/data', (_req, res) => {
+    res.status(404).type('text/plain').send('Not Found');
+});
 
 /**
  * @param {string} urlPath
@@ -74,6 +166,15 @@ const staticRoot = config.projectRoot;
 function isPortalRootPath(urlPath) {
     const normalized = String(urlPath || '/').replace(/\/+$/, '') || '/';
     return normalized === '/';
+}
+
+/**
+ * @param {string} urlPath
+ * @returns {boolean}
+ */
+function isWikiPath(urlPath) {
+    const normalized = String(urlPath || '/');
+    return normalized === '/wiki' || normalized === '/wiki/' || normalized.startsWith('/wiki/');
 }
 
 /**
@@ -89,7 +190,6 @@ function isStaticAssetRequest(urlPath) {
         normalized.startsWith('/assets/') ||
         normalized.startsWith('/css/') ||
         normalized.startsWith('/js/') ||
-        normalized.startsWith('/data/') ||
         normalized.startsWith('/errors/')
     );
 }
@@ -125,6 +225,10 @@ app.use(express.static(staticRoot, {
             return;
         }
         if (/\.(css|js|svg|png|jpg|jpeg|webp|gif|ico)$/i.test(filePath)) {
+            if (/\.bundle\.(css|js)$/i.test(filePath) || /[\\/]js[\\/]wiki[\\/]/i.test(filePath)) {
+                res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+                return;
+            }
             res.setHeader('Cache-Control', 'public, max-age=3600');
         }
     }
@@ -140,6 +244,11 @@ app.get('*', (req, res, next) => {
         return;
     }
     if (!isPortalRootPath(req.path)) {
+        if (isWikiPath(req.path)) {
+            res.setHeader('Cache-Control', 'no-store');
+            res.sendFile(path.join(staticRoot, 'wiki.html'));
+            return;
+        }
         next();
         return;
     }

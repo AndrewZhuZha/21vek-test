@@ -9,6 +9,14 @@ import {
     validatePasswordResetPayload
 } from '../tracker/validate.js';
 
+function logTrackerDemo(kind, payload) {
+    console.log(`Tracker ${kind} (demo):`, {
+        requestType: payload.requestType,
+        summaryLength: payload.summary ? String(payload.summary).length : 0,
+        demo: true
+    });
+}
+
 export const trackerRouter = Router();
 
 trackerRouter.post(
@@ -33,7 +41,7 @@ trackerRouter.post(
 
             if (config.trackerDemoMode) {
                 const issueKey = `DEMO-${String(Date.now()).slice(-6)}`;
-                console.log('Tracker issue (demo):', trackerPayload);
+                logTrackerDemo('issue', trackerPayload);
                 res.json({
                     issueKey,
                     demo: true
@@ -67,7 +75,7 @@ trackerRouter.post(
 
             if (config.trackerDemoMode) {
                 const issueKey = `DEMO-${String(Date.now()).slice(-6)}`;
-                console.log('Tracker password reset (demo):', trackerPayload);
+                logTrackerDemo('password-reset', trackerPayload);
                 res.json({
                     issueKey,
                     demo: true

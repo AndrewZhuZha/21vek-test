@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchField = document.querySelector('.search-field');
     const searchClearBtn = document.getElementById('searchClearBtn');
     const emptyState = document.getElementById('searchEmptyState');
+    const wikiSuggestions = document.getElementById('wikiSearchSuggestions');
+    const wikiSuggestionsList = document.getElementById('wikiSearchSuggestionsList');
     const searchSpinner = document.getElementById('searchSpinner');
     const clearSearchBtn = document.getElementById('clearSearchBtn');
     const homeTitleBtn = document.getElementById('homeTitleBtn');
@@ -157,10 +159,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateEmptyState(query, hasVisibleCards) {
+        renderWikiSuggestions(query, hasVisibleCards);
         if (!emptyState) return;
         const showEmptyState = Boolean((query || '').trim()) && !hasVisibleCards;
         emptyState.classList.toggle('hidden', !showEmptyState);
         emptyState.setAttribute('aria-hidden', String(!showEmptyState));
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function renderWikiSuggestions(query, hasVisibleCards) {
+        if (!wikiSuggestions || !wikiSuggestionsList) {
+            return;
+        }
+
+        if (!query || !query.trim() || hasVisibleCards) {
+            wikiSuggestions.classList.add('hidden');
+            wikiSuggestions.setAttribute('aria-hidden', 'true');
+            wikiSuggestionsList.innerHTML = '';
+            return;
+        }
+
+        const searchApi = window.PortalSearch;
+        if (!searchApi?.getWikiMatches) {
+            wikiSuggestions.classList.add('hidden');
+            wikiSuggestions.setAttribute('aria-hidden', 'true');
+            wikiSuggestionsList.innerHTML = '';
+            return;
+        }
+
+        const matches = searchApi.getWikiMatches(query, 5);
+        if (!matches.length) {
+            wikiSuggestions.classList.add('hidden');
+            wikiSuggestions.setAttribute('aria-hidden', 'true');
+            wikiSuggestionsList.innerHTML = '';
+            return;
+        }
+
+        wikiSuggestionsList.innerHTML = matches
+            .map((item) => `
+                <li>
+                    <a class="search-empty-state__wiki-link" href="${escapeHtml(item.href || '/wiki/')}" data-wiki-slug="${escapeHtml(item.slug || '')}">
+                        ${escapeHtml(item.title || item.slug || 'Статья Wiki')}
+                    </a>
+                </li>
+            `)
+            .join('');
+
+        wikiSuggestions.classList.remove('hidden');
+        wikiSuggestions.setAttribute('aria-hidden', 'false');
     }
 
     function dispatchFilterChanged() {
@@ -298,6 +352,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSearchPlaceholder();
 
     if (searchInput) {
+        searchInput.addEventListener('focus', () => {
+            window.PortalSearch?.ensureIndexLoaded?.().catch(() => {});
+        });
         searchInput.addEventListener('input', queueFilter);
     }
 

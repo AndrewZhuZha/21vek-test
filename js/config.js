@@ -15,16 +15,16 @@ window.PortalConfig = {
         { id: 'usefulSection', label: 'Полезное', icon: '🎯' }
     ],
     supportEmail: 'itsupport@21vek.by',
-    portalTagline: 'IT-Support · 21VEK',
+    portalTagline: 'IT-Support',
     externalLinks: {
-        wiki: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/',
-        learning: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/',
+        wiki: '/wiki/',
+        learning: '/wiki/',
         smdb: 'https://snipeit-tb.triovist.local/'
     },
     usefulLinks: {
         cmdb: 'https://snipeit-tb.triovist.local/',
-        phonebook: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/',
-        knowledge: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/'
+        phonebook: '/wiki/',
+        knowledge: '/wiki/'
     },
     themeStorageKey: 'portal-theme',
     themeTransitionMs: 140,
@@ -68,6 +68,21 @@ window.PortalConfig = {
         loginUrl: '/api/auth/login',
         logoutUrl: '/api/auth/logout',
         userInfoUrl: '/api/auth/me'
+    },
+    /** Встроенный reader Yandex Wiki (wiki.html + /api/wiki/*). */
+    wiki: {
+        routeUrl: '/wiki/',
+        baseSlug: 'homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov',
+        baseTitle: 'Инструкции для сотрудников',
+        externalUrl: 'https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/',
+        tour: {
+            enabled: true,
+            storageKey: 'portal.wiki.tour.completed.v1',
+            showReplayButton: true,
+            autoStart: true,
+            replayButtonSelector: '#wikiTourReplayBtn',
+            replayButtonLabel: 'Показать тур'
+        }
     }
 };
 
@@ -107,6 +122,18 @@ window.PortalConfig = {
                 window.PortalConfig.auth.positionByEmail = {
                     ...window.PortalConfig.auth.positionByEmail,
                     ...window.PortalConfigLocal.auth.positionByEmail
+                };
+            }
+        }
+        if (window.PortalConfigLocal.wiki) {
+            window.PortalConfig.wiki = {
+                ...window.PortalConfig.wiki,
+                ...window.PortalConfigLocal.wiki
+            };
+            if (window.PortalConfigLocal.wiki.tour) {
+                window.PortalConfig.wiki.tour = {
+                    ...window.PortalConfig.wiki.tour,
+                    ...window.PortalConfigLocal.wiki.tour
                 };
             }
         }

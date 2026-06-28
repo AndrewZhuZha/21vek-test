@@ -7,6 +7,7 @@
     "start": "node src/index.js"
   },
   "dependencies": {
+    "@diplodoc/transform": "^4.76.2",
     "compression": "^1.8.1",
     "connect-redis": "^9.0.0",
     "dotenv": "^16.4.7",
@@ -14,6 +15,7 @@
     "express-rate-limit": "^7.4.1",
     "express-session": "^1.18.1",
     "helmet": "^8.1.0",
-    "redis": "^6.0.1"
+    "redis": "^6.0.1",
+    "sanitize-html": "^2.17.5"
   }
 }

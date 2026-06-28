@@ -11,12 +11,17 @@ const DIRECTORY_OAUTH_SCOPES = [
     'directory:read_users',
     'directory:read_departments'
 ];
+const WIKI_OAUTH_SCOPES = ['wiki:read'];
 
 function getOAuthScopes() {
-    if (!config.yandex360UseDirectory) {
-        return BASE_OAUTH_SCOPES;
+    const scopes = [...BASE_OAUTH_SCOPES];
+    if (config.yandex360UseDirectory) {
+        scopes.push(...DIRECTORY_OAUTH_SCOPES);
     }
-    return [...BASE_OAUTH_SCOPES, ...DIRECTORY_OAUTH_SCOPES];
+    if (config.yandexWikiEnabled) {
+        scopes.push(...WIKI_OAUTH_SCOPES);
+    }
+    return scopes;
 }
 
 /**

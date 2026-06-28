@@ -112,6 +112,15 @@ window.PortalForm = (function () {
         scheduleGlobalNoticeHide(0);
     }
 
+    function showGlobalDemoNotice(message) {
+        const notice = ensureGlobalNoticeEl();
+        if (!notice) return;
+        const { el, messageEl } = notice;
+        messageEl.textContent = message;
+        el.className = 'portal-global-notice portal-global-notice--demo';
+        scheduleGlobalNoticeHide(0);
+    }
+
     return {
         showError,
         showNotice,
@@ -119,6 +128,7 @@ window.PortalForm = (function () {
         requireValue,
         showGlobalError,
         showGlobalNotice,
+        showGlobalDemoNotice,
         clearGlobalNotice
     };
 })();

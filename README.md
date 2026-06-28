@@ -9,6 +9,7 @@
 ```bash
 npm install
 npm run setup:auth          # создаёт backend/.env — заполните YANDEX_CLIENT_ID и SECRET
+npm run refresh:wiki-search # sync + build + validate wiki artifacts
 npm start                   # http://localhost:3000
 ```
 
@@ -21,6 +22,7 @@ npm start                   # http://localhost:3000
 ```bash
 npm run build               # search-index + error pages
 npm run verify:prod         # build + API smoke
+npm run verify:wiki         # smoke wiki reader/config (для wiki-enabled среды)
 npm run verify:a11y         # axe (нужен Chrome/Chromium)
 npm run audit:deps
 ```
@@ -42,7 +44,9 @@ npm run audit:deps
 ## Документация
 
 - [docs/AUTH-SETUP.md](docs/AUTH-SETUP.md) — OAuth Yandex 360
+- [docs/WIKI-SETUP.md](docs/WIKI-SETUP.md) — встроенный wiki reader + cron-синхронизация
 - [docs/DEPLOY.md](docs/DEPLOY.md) — production: Docker, nginx, безопасность
+- [docs/SCALE-3000.md](docs/SCALE-3000.md) — масштабирование до 3000 пользователей
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — модули и добавление услуг
 - [docs/SMOKE-TESTS.md](docs/SMOKE-TESTS.md) — чек-лист перед релизом
 - [errors/DEPLOY.md](errors/DEPLOY.md) — привязка страниц ошибок в nginx/IIS

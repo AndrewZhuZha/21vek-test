@@ -105,7 +105,12 @@
 
     function login() {
         const url = authConfig.loginUrl || '/api/auth/login';
-        window.location.href = url;
+        const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        const nextUrl = new URL(url, window.location.origin);
+        if (returnTo && returnTo !== '/') {
+            nextUrl.searchParams.set('returnTo', returnTo);
+        }
+        window.location.href = nextUrl.toString();
     }
 
     async function logout() {

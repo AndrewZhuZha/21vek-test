@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,6 +10,7 @@ const INDEX_HTML_PATH = path.join(rootDir, 'index.html');
 const CONFIG_JS_PATH = path.join(rootDir, 'js', 'config.js');
 const OVERRIDES_PATH = path.join(rootDir, 'data', 'search.overrides.json');
 const REQUEST_TYPES_PATH = path.join(rootDir, 'data', 'request-types.json');
+const WIKI_SEARCH_PATH = path.join(rootDir, 'data', 'wiki-search.json');
 const OUTPUT_PATH = path.join(rootDir, 'js', 'search-index.js');
 const REQUEST_TYPES_OUTPUT_PATH = path.join(rootDir, 'js', 'request-types.js');
 
@@ -19,6 +20,12 @@ function normalizeText(value) {
         .replace(/ё/g, 'е')
         .replace(/\s+/g, ' ')
         .trim();
+}
+
+async function writeFileAtomic(targetPath, content) {
+    const tempPath = `${targetPath}.tmp-${process.pid}-${Date.now()}`;
+    await writeFile(tempPath, content, 'utf8');
+    await rename(tempPath, targetPath);
 }
 
 function uniqNormalized(values) {
@@ -126,16 +133,73 @@ function normalizeSynonyms(globalSynonyms) {
     return result;
 }
 
+function parseWikiSearchRaw(raw) {
+    if (!raw || !String(raw).trim()) {
+        return [];
+    }
+
+    let parsed;
+    try {
+        parsed = JSON.parse(raw);
+    } catch (error) {
+        throw new Error(`Некорректный JSON в data/wiki-search.json: ${error.message}`);
+    }
+
+    const items = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.items)
+            ? parsed.items
+            : [];
+
+    return items
+        .map((item) => {
+            const slug = String(item?.slug || '')
+                .trim()
+                .replace(/^\/+/, '')
+                .replace(/\/+$/, '');
+            if (!slug) return null;
+
+            const title = String(item?.title || '')
+                .trim()
+                || slug.split('/').pop().replace(/[-_]+/g, ' ');
+            const corpus = String(item?.corpus || '').trim();
+            const keywords = uniqNormalized([
+                title,
+                slug.replace(/\//g, ' '),
+                corpus
+            ]);
+
+            return {
+                id: `wiki:${slug}`,
+                slug,
+                title,
+                href: `/wiki/#/${slug.split('/').map((part) => encodeURIComponent(part)).join('/')}`,
+                keywords,
+                corpus: uniqNormalized([title, slug.replace(/\//g, ' '), corpus]).join(' '),
+                updatedAt: String(item?.updatedAt || item?.updated_at || '').trim() || null
+            };
+        })
+        .filter(Boolean);
+}
+
 async function build() {
-    const [indexSource, configSource, overridesRaw, requestTypesRaw] = await Promise.all([
+    const [indexSource, configSource, overridesRaw, requestTypesRaw, wikiSearchRaw] = await Promise.all([
         readFile(INDEX_HTML_PATH, 'utf8'),
         readFile(CONFIG_JS_PATH, 'utf8'),
         readFile(OVERRIDES_PATH, 'utf8'),
-        readFile(REQUEST_TYPES_PATH, 'utf8')
+        readFile(REQUEST_TYPES_PATH, 'utf8'),
+        readFile(WIKI_SEARCH_PATH, 'utf8').catch(() => '')
     ]);
 
     const overrides = JSON.parse(overridesRaw);
     const requestMap = JSON.parse(requestTypesRaw);
+    const wikiPagesArray = parseWikiSearchRaw(wikiSearchRaw);
+    const wikiEnabled = String(process.env.YANDEX_WIKI_ENABLED || 'false').toLowerCase() === 'true';
+    const minWikiPagesRaw = Number(process.env.YANDEX_WIKI_MIN_PAGES || process.env.WIKI_INDEX_MIN_COUNT || '1');
+    const minWikiPages = Number.isFinite(minWikiPagesRaw) && minWikiPagesRaw > 0 ? Math.floor(minWikiPagesRaw) : 1;
+    if (wikiEnabled && wikiPagesArray.length < minWikiPages) {
+        throw new Error(`Wiki index validation failed: pages=${wikiPagesArray.length}, required>=${minWikiPages}`);
+    }
     const configSections = parseConfigSections(configSource);
     const parsedIndex = parseIndexCards(indexSource);
 
@@ -203,15 +267,22 @@ async function build() {
         };
     });
 
+    const wikiPages = {};
+    wikiPagesArray.forEach((page) => {
+        wikiPages[page.id] = page;
+    });
+
     const searchIndex = {
-        version: 1,
+        version: 3,
         generatedAt: new Date().toISOString(),
         globalSynonyms: normalizeSynonyms(overrides.globalSynonyms),
         sections,
         cards,
+        wikiPages,
         stats: {
             sections: Object.keys(sections).length,
-            cards: Object.keys(cards).length
+            cards: Object.keys(cards).length,
+            wikiPages: Object.keys(wikiPages).length
         }
     };
 
@@ -219,13 +290,13 @@ async function build() {
     const requestTypesOutput = `/**\n * AUTO-GENERATED FILE.\n * Source: data/request-types.json via scripts/build-search-index.mjs\n * Do not edit manually.\n */\nwindow.PortalRequestTypes = ${JSON.stringify(requestMap, null, 4)};\n`;
 
     await Promise.all([
-        writeFile(OUTPUT_PATH, output, 'utf8'),
-        writeFile(REQUEST_TYPES_OUTPUT_PATH, requestTypesOutput, 'utf8')
+        writeFileAtomic(OUTPUT_PATH, output),
+        writeFileAtomic(REQUEST_TYPES_OUTPUT_PATH, requestTypesOutput)
     ]);
 
     console.log(`Search index generated: ${path.relative(rootDir, OUTPUT_PATH)}`);
     console.log(`Request types generated: ${path.relative(rootDir, REQUEST_TYPES_OUTPUT_PATH)}`);
-    console.log(`Sections: ${searchIndex.stats.sections}; cards: ${searchIndex.stats.cards}`);
+    console.log(`Sections: ${searchIndex.stats.sections}; cards: ${searchIndex.stats.cards}; wiki: ${searchIndex.stats.wikiPages}`);
 }
 
 build().catch((error) => {

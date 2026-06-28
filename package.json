@@ -5,14 +5,25 @@
   "scripts": {
     "build:search": "node scripts/build-search-index.mjs",
     "build:errors": "node scripts/build-error-pages.mjs",
-    "build": "npm run build:search && npm run build:errors",
+    "build:css": "node scripts/build-css-bundle.mjs",
+    "build": "npm run build:search && npm run build:errors && npm run build:css",
     "postinstall": "npm install --prefix backend",
     "start": "node backend/src/index.js",
     "dev": "node --watch backend/src/index.js",
     "setup:auth": "node scripts/setup-auth-env.mjs",
+    "sync:wiki": "node scripts/sync-wiki-index.mjs",
+    "refresh:wiki-search": "node scripts/refresh-wiki-search.mjs",
     "verify:auth": "node scripts/verify-auth-smoke.mjs",
+    "verify:wiki": "node scripts/verify-wiki-smoke.mjs",
+    "audit:wiki-parser": "node backend/scripts/wiki-verify.mjs",
     "verify:a11y": "node scripts/verify-a11y.mjs",
     "verify:prod": "npm run build && npm run verify:auth",
+    "warm:wiki-cache": "node scripts/warm-wiki-cache.mjs",
+    "loadtest:static": "k6 run scripts/loadtest/portal-static.js",
+    "loadtest:api": "k6 run scripts/loadtest/portal-api.js",
+    "loadtest:wiki": "k6 run scripts/loadtest/wiki-read.js",
+    "loadtest:smoke": "node scripts/loadtest/run-smoke.mjs",
+    "test:backend": "node --test backend/test/*.test.js",
     "audit:deps": "npm audit --audit-level=high --strict-ssl=false && npm audit --prefix backend --audit-level=high --strict-ssl=false"
   }
 }

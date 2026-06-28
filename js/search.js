@@ -1,9 +1,12 @@
 // Controlled search: literal substring match first, synonyms only for whole words.
 (() => {
-    const searchIndex = window.PortalSearchIndex || {};
-    const cards = searchIndex.cards || {};
-    const sections = searchIndex.sections || {};
-    const rawAliases = searchIndex.globalSynonyms || {};
+    let cards = {};
+    let sections = {};
+    let wikiPages = {};
+    let aliasMap = new Map();
+    let cardLookup = {};
+    let sectionLookup = {};
+    let wikiLookup = {};
     const MIN_QUERY_LEN = 3;
     const MIN_ALIAS_TERM_LEN = 3;
     const STOP_TOKENS = new Set([
@@ -89,9 +92,32 @@
         return lookup;
     }
 
-    const aliasMap = buildAliasMap(rawAliases);
-    const cardLookup = buildEntryLookup(cards);
-    const sectionLookup = buildEntryLookup(sections);
+    function rebuildIndexState(searchIndex) {
+        const index = searchIndex || {};
+        cards = index.cards || {};
+        sections = index.sections || {};
+        wikiPages = index.wikiPages || {};
+        aliasMap = buildAliasMap(index.globalSynonyms || {});
+        cardLookup = buildEntryLookup(cards);
+        sectionLookup = buildEntryLookup(sections);
+        wikiLookup = buildEntryLookup(wikiPages);
+        cachedQuery = '';
+        cachedMatcher = createMatcher('');
+    }
+
+    rebuildIndexState(window.PortalSearchIndex || {});
+
+    function ensureIndexLoaded() {
+        const loader = window.PortalSearchIndexLoader;
+        if (!loader || loader.isLoaded()) {
+            return Promise.resolve(window.PortalSearchIndex || {});
+        }
+        return loader.load().then((index) => {
+            rebuildIndexState(index);
+            document.dispatchEvent(new CustomEvent('portal:search-index-ready'));
+            return index;
+        });
+    }
 
     function expandAliases(term) {
         const normalizedTerm = normalize(term);
@@ -239,6 +265,34 @@
     let cachedQuery = '';
     let cachedMatcher = createMatcher('');
 
+    function scoreWikiMatch(entry, normalizedQuery) {
+        if (!entry?.searchText || !normalizedQuery) return 0;
+        const idx = entry.searchText.indexOf(normalizedQuery);
+        if (idx === -1) return 0;
+        return Math.max(1, 200 - idx);
+    }
+
+    function getWikiMatches(query, limit = 5) {
+        const queryState = buildQueryState(query);
+        if (!queryState.hasQuery) return [];
+
+        const matched = [];
+        Object.keys(wikiLookup).forEach((wikiId) => {
+            const entry = wikiLookup[wikiId];
+            if (!entryMatches(entry, queryState)) return;
+            const wikiItem = wikiPages[wikiId];
+            if (!wikiItem) return;
+            matched.push({
+                ...wikiItem,
+                score: scoreWikiMatch(entry, queryState.normalizedQuery)
+            });
+        });
+
+        return matched
+            .sort((a, b) => b.score - a.score || String(a.title || '').localeCompare(String(b.title || ''), 'ru'))
+            .slice(0, Math.max(1, Number(limit) || 5));
+    }
+
     function getMatcher(query) {
         const normalizedQuery = normalize(query);
         if (normalizedQuery !== cachedQuery) {
@@ -250,8 +304,15 @@
 
     window.PortalSearch = {
         createMatcher,
+        getWikiMatches,
+        ensureIndexLoaded,
+        reloadFromIndex(searchIndex) {
+            rebuildIndexState(searchIndex);
+        },
         getMatchedSectionIds(query) {
             return new Set(getMatcher(query).matchedSectionIds);
         }
     };
+
+    window.PortalSearchIndexLoader?.scheduleIdleLoad();
 })();

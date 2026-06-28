@@ -1,16 +1,21 @@
-services:
-  portal:
-    init: true
-    read_only: true
-    tmpfs:
-      - /tmp
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    pids_limit: 256
-    environment:
-      NODE_ENV: production
-      REQUEST_LOGGING: ${REQUEST_LOGGING:-true}
-      SESSION_STORE: ${SESSION_STORE:-memory}
-      SESSION_REDIS_URL: ${SESSION_REDIS_URL:-}
+services:
+  portal:
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - portal_wiki_data:/app/data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 1024
+    environment:
+      NODE_ENV: production
+      REQUEST_LOGGING: ${REQUEST_LOGGING:-true}
+      SESSION_STORE: ${SESSION_STORE:-redis}
+      SESSION_REDIS_URL: ${SESSION_REDIS_URL:-}
+
+volumes:
+  portal_wiki_data:

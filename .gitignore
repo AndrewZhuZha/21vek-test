@@ -8,3 +8,4 @@ backend/.env
 js/config.local.js
 backend/node_modules/
 node_modules/
+tmp-wiki-*.html

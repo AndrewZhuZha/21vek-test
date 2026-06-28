@@ -54,9 +54,12 @@ export async function setupSession(app) {
  * @param {import('express-session').Session & Partial<import('express-session').SessionData>} sessionData
  * @param {{ displayName: string, email: string, login: string, avatarUrl: string | null, position?: string | null, department?: string | null }} user
  */
-export function setSessionUser(sessionData, user) {
+export function setSessionUser(sessionData, user, accessToken) {
     sessionData.user = user;
     sessionData.oauthState = undefined;
+    if (accessToken) {
+        sessionData.accessToken = accessToken;
+    }
 }
 
 /**
@@ -65,4 +68,5 @@ export function setSessionUser(sessionData, user) {
 export function clearSessionUser(sessionData) {
     sessionData.user = undefined;
     sessionData.oauthState = undefined;
+    sessionData.accessToken = undefined;
 }

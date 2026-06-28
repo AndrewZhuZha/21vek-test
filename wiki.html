@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+
+<html lang="ru" data-theme="light" class="portal-auth-pending" data-asset-version="mqye6s5h.1v">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+    <meta name="description" content="База знаний IT-Support 21VEK: чтение статей Yandex Wiki внутри корпоративного портала.">
+
+    <meta name="robots" content="noindex,nofollow">
+
+    <title>IT-Support · База знаний</title>
+
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+
+    <link rel="alternate icon" href="/assets/favicon.svg">
+
+    <link rel="preconnect" href="https://avatars.yandex.net" crossorigin>
+    <link rel="dns-prefetch" href="https://wiki.yandex.ru">
+
+    <style id="portal-auth-critical">
+
+        html.portal-auth-pending .app-layout,
+
+        html.portal-auth-pending .skip-link {
+
+            display: none !important;
+
+        }
+
+    </style>
+
+    <script src="/js/portal-theme-init.js"></script>
+
+    <link rel="preload" href="/css/wiki.bundle.css?v=mqye6s5h.1v" as="style">
+    <link rel="stylesheet" href="/css/wiki.bundle.css?v=mqye6s5h.1v">
+
+</head>
+
+<body>
+
+<a class="skip-link" href="#wikiMain" hidden>Перейти к статье</a>
+
+<div id="portalAuthGate" class="portal-auth-gate hidden" role="main" aria-labelledby="portalAuthGateTitle">
+
+    <button class="theme-toggle portal-auth-gate__theme" id="portalAuthGateThemeToggle" type="button" aria-pressed="false" aria-label="Переключить тему">
+
+        <span class="theme-toggle__icon" aria-hidden="true">🌙</span>
+
+        <span class="theme-toggle__label">Тема</span>
+
+    </button>
+
+    <div class="portal-auth-gate__panel">
+
+        <img src="/assets/logo-21vek.svg" class="portal-auth-gate__logo" alt="21VEK" width="140" height="50">
+
+        <div id="portalAuthGateStepIntro" class="portal-auth-gate__step">
+
+            <h1 class="portal-auth-gate__title" id="portalAuthGateTitle">IT-Support · 21VEK</h1>
+
+            <p class="portal-auth-gate__desc">Войдите корпоративной учетной записью Яндекс (@21vek.by). После входа откроется база знаний.</p>
+
+            <p id="portalAuthGateError" class="portal-auth-gate__error hidden" role="alert"></p>
+
+            <button type="button" id="portalAuthLoginBtn" class="btn-primary portal-auth-gate__btn">Войти через Яндекс</button>
+
+        </div>
+
+        <p class="portal-auth-gate__notice">Раздел базы знаний доступен только сотрудникам с учетной записью <strong>@21vek.by</strong>.</p>
+
+    </div>
+
+</div>
+
+
+
+<div class="page-bg" aria-hidden="true">
+
+    <div class="page-bg__watermark">21vek.by</div>
+
+    <div class="page-bg__blob page-bg__blob--1"></div>
+
+    <div class="page-bg__blob page-bg__blob--2"></div>
+
+</div>
+
+
+
+<div class="app-layout" hidden>
+
+    <main class="main-content wiki-main-content">
+
+        <div class="container wiki-container">
+
+            <header class="header wiki-header">
+
+                <div class="header-utility">
+
+                    <div class="header-links">
+
+                        <div class="header-links__primary">
+
+                            <a class="header-link-btn" href="/" rel="noopener">Портал</a>
+
+                        </div>
+
+                        <div class="header-links__actions">
+
+                            <button type="button" class="header-link-btn header-link-btn--tour hidden" id="wikiTourReplayBtn">Показать тур</button>
+
+                            <button class="theme-toggle header-theme-toggle hidden" id="themeToggleHeader" type="button" aria-pressed="false" aria-label="Переключить тему">
+
+                                <span class="theme-toggle__icon" aria-hidden="true">🌙</span>
+
+                                <span class="theme-toggle__label">Тема</span>
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="header-main-row wiki-header-main-row">
+
+                    <div class="header-main">
+
+                        <div class="header-brand">
+
+                            <img src="/assets/logo-21vek.svg" class="header-brand__logo" alt="21VEK" width="112" height="40">
+
+                            <h1 id="portalTagline">IT-Support · База знаний</h1>
+
+                        </div>
+
+                        <p>Инструкции и справочные материалы из Yandex Wiki.</p>
+
+                    </div>
+
+                    <div class="search-bar header-search-row wiki-header-actions">
+
+                        <button
+                            type="button"
+                            id="wikiSidebarToggle"
+                            class="wiki-sidebar-toggle wiki-sidebar-toggle--header"
+                            aria-controls="wikiSidebarPanel"
+                            aria-expanded="false"
+                            aria-label="Разделы Wiki"
+                        >
+                            <span class="wiki-sidebar-toggle__icon" aria-hidden="true">☰</span>
+                            <span class="wiki-sidebar-toggle__label">Разделы</span>
+                        </button>
+
+                        <div class="search-field" id="wikiSearchField">
+
+                            <input type="search" id="wikiSearchInput" placeholder="Поиск по Wiki..." aria-label="Поиск по Wiki" autocomplete="off">
+
+                            <span class="search-field__spinner hidden" id="wikiSearchSpinner" aria-hidden="true"></span>
+
+                            <button class="search-field__clear" id="wikiSearchClearBtn" type="button" aria-label="Очистить поиск" aria-hidden="true" tabindex="-1"></button>
+
+                        </div>
+
+                        <button type="button" id="portalAuthLoginHeaderBtn" class="header-link-btn portal-auth-login-header hidden">Войти</button>
+
+                        <div id="portalAuthUser" class="portal-auth-user hidden">
+
+                            <button type="button" id="portalAuthUserBtn" class="portal-auth-user__btn" aria-haspopup="true" aria-expanded="false" aria-label="Меню пользователя">
+
+                                <img id="portalAuthAvatar" class="portal-auth-user__avatar hidden" alt="" width="32" height="32">
+
+                                <span id="portalAuthAvatarInitials" class="portal-auth-user__avatar portal-auth-user__avatar--initials hidden" aria-hidden="true"></span>
+
+                                <span id="portalAuthName" class="portal-auth-user__name"></span>
+
+                                <span class="portal-auth-user__chevron" aria-hidden="true">▾</span>
+
+                            </button>
+
+                            <div id="portalAuthMenu" class="portal-auth-menu hidden" role="menu" aria-label="Меню пользователя">
+
+                                <div class="portal-auth-menu__profile">
+
+                                    <div class="portal-auth-menu__avatar-wrap" aria-hidden="true">
+
+                                        <img id="portalAuthMenuAvatar" class="portal-auth-menu__avatar hidden" alt="" width="48" height="48">
+
+                                        <span id="portalAuthMenuAvatarInitials" class="portal-auth-menu__avatar portal-auth-menu__avatar--initials hidden"></span>
+
+                                    </div>
+
+                                    <div class="portal-auth-menu__meta">
+
+                                        <p id="portalAuthMenuName" class="portal-auth-menu__name"></p>
+
+                                        <p id="portalAuthMenuPosition" class="portal-auth-menu__position"></p>
+
+                                        <p id="portalAuthEmail" class="portal-auth-menu__email"></p>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="portal-auth-menu__divider" role="presentation"></div>
+
+                                <div class="portal-auth-menu__actions">
+
+                                    <button type="button" id="portalAuthMyIssuesBtn" class="portal-auth-menu__action" role="menuitem">
+
+                                        <span class="portal-auth-menu__action-icon" aria-hidden="true">🧾</span>
+
+                                        <span class="portal-auth-menu__action-label">Мои заявки</span>
+
+                                    </button>
+
+                                    <button type="button" id="portalAuthMyAssetsBtn" class="portal-auth-menu__action" role="menuitem">
+
+                                        <span class="portal-auth-menu__action-icon" aria-hidden="true">💻</span>
+
+                                        <span class="portal-auth-menu__action-label">Моя техника</span>
+
+                                    </button>
+
+                                    <div class="portal-auth-menu__divider portal-auth-menu__divider--in-actions" role="presentation"></div>
+
+                                    <button type="button" class="portal-auth-menu__action theme-toggle" id="portalAuthMenuThemeToggle" aria-pressed="false" role="menuitem">
+
+                                        <span class="portal-auth-menu__action-icon theme-toggle__icon" aria-hidden="true">🌙</span>
+
+                                        <span class="portal-auth-menu__action-label theme-toggle__label">Темная тема</span>
+
+                                    </button>
+
+                                    <button type="button" id="portalAuthLogoutBtn" class="portal-auth-menu__action portal-auth-menu__action--danger" role="menuitem">Выйти</button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </header>
+
+            <div class="wiki-shell">
+
+                <div id="wikiSidebarBackdrop" class="wiki-sidebar-backdrop hidden" aria-hidden="true"></div>
+
+                <aside class="wiki-sidebar" aria-label="Навигация по статьям" id="wikiSidebarPanel">
+
+                    <div class="wiki-sidebar__panel">
+
+                        <div class="wiki-sidebar__head">
+
+                            <div class="wiki-sidebar__head-main">
+
+                                <h2 class="wiki-sidebar__title">Разделы</h2>
+
+                                <p id="wikiSidebarStatus" class="wiki-sidebar__status" role="status" aria-live="polite">Загрузка структуры Wiki...</p>
+
+                            </div>
+
+                        </div>
+
+                        <div class="wiki-loading-panel hidden" id="wikiTreeLoading" aria-hidden="true">
+
+                            <span class="wiki-loading-panel__spinner" aria-hidden="true"></span>
+
+                            <span class="wiki-loading-panel__text">Загрузка разделов...</span>
+
+                        </div>
+
+                        <nav id="wikiTree" class="wiki-tree" aria-label="Структура раздела Wiki"></nav>
+
+                        <div class="wiki-sidebar__foot" aria-hidden="true"></div>
+
+                    </div>
+
+                </aside>
+
+                <section class="wiki-layout" aria-label="База знаний">
+
+                <section class="wiki-page" id="wikiMain" aria-live="polite">
+
+                    <div class="wiki-page__chrome">
+
+                    <nav class="wiki-breadcrumbs" id="wikiBreadcrumbs" aria-label="Путь к странице"></nav>
+
+
+
+                    <header class="wiki-page__header">
+
+                        <div class="wiki-page__title-row">
+
+                            <h2 id="wikiPageTitle" class="wiki-page__title">База знаний</h2>
+
+                            <div class="wiki-page__header-actions">
+
+                                <a id="wikiOpenLink" class="wiki-page__action-btn btn-secondary" href="https://wiki.yandex.ru/" target="_blank" rel="noopener noreferrer">
+
+                                    <span class="wiki-page__action-icon" aria-hidden="true">↗</span>
+
+                                    <span class="wiki-page__action-label wiki-page__action-label--full">Открыть в Wiki</span>
+
+                                    <span class="wiki-page__action-label wiki-page__action-label--short">Wiki</span>
+
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                        <p id="wikiPageMeta" class="wiki-page__meta"></p>
+
+                    </header>
+
+
+
+                    <div id="wikiPageNotice" class="wiki-page__notice hidden" role="alert"></div>
+
+                    </div>
+
+
+
+                    <div class="wiki-article-shell" id="wikiArticleShell">
+
+                        <div class="wiki-loading-panel wiki-loading-panel--article hidden" id="wikiPageLoading" aria-hidden="true">
+
+                            <span class="wiki-loading-panel__spinner" aria-hidden="true"></span>
+
+                            <span class="wiki-loading-panel__text">Загрузка статьи...</span>
+
+                        </div>
+
+                        <article id="wikiPageContent" class="wiki-article yfm">
+
+                            <p class="wiki-article__placeholder">Выберите страницу слева или воспользуйтесь поиском в шапке.</p>
+
+                        </article>
+
+                    </div>
+
+                </section>
+
+                </section>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+
+<script src="/js/config.js" defer></script>
+<script src="/js/config.local.js" defer onerror="window.PortalConfigLocal=window.PortalConfigLocal||{}"></script>
+<script src="/js/auth/errors.js" defer></script>
+<script src="/js/auth/index.js" defer></script>
+<script src="/js/auth/gate.js" defer></script>
+<script src="/js/auth/ui.js" defer></script>
+<script src="/js/theme.js" defer></script>
+<script src="/js/tour/spotlight.js" defer></script>
+<script src="/js/wiki/api.js?v=mqye6s5h.1v" defer></script>
+<script src="/js/wiki/lightbox.js?v=mqye6s5h.1v" defer></script>
+<script src="/js/wiki/reader.js?v=mqye6s5h.1v" defer></script>
+
+</body>
+
+</html>
+
+

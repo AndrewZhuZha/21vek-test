@@ -3,8 +3,7 @@
 /* Пока проверяется сессия — не показываем основной портал (без «мигания») */
 html.portal-auth-pending .app-layout,
 html.portal-auth-pending .skip-link,
-html.portal-auth-pending #portalGlobalNotice,
-html.portal-auth-pending #portalSoonTip {
+html.portal-auth-pending #portalGlobalNotice {
     display: none !important;
     pointer-events: none;
 }

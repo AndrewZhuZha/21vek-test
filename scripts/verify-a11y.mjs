@@ -2,7 +2,11 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 
-const targetUrl = process.env.A11Y_URL || 'http://localhost:3000/';
+const baseUrl = (process.env.PORTAL_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+const targets = (process.env.A11Y_URLS || `${baseUrl}/,${baseUrl}/wiki/`)
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 
 const chromeCandidates = [
     process.env.CHROME_BIN,
@@ -25,18 +29,28 @@ if (!chromePath) {
     process.exit(0);
 }
 
-const result = spawnSync(
-    'npx',
-    ['--yes', '--strict-ssl=false', '@axe-core/cli', targetUrl, '--chrome-path', chromePath],
-    {
-        stdio: 'inherit',
-        shell: process.platform === 'win32'
-    }
-);
+let failed = false;
 
-if (result.error) {
-    console.error(result.error);
-    process.exit(1);
+for (const targetUrl of targets) {
+    console.log(`\nA11y scan: ${targetUrl}`);
+    const result = spawnSync(
+        'npx',
+        ['--yes', '--strict-ssl=false', '@axe-core/cli', targetUrl, '--chrome-path', chromePath],
+        {
+            stdio: 'inherit',
+            shell: process.platform === 'win32'
+        }
+    );
+
+    if (result.error) {
+        console.error(result.error);
+        failed = true;
+        continue;
+    }
+
+    if ((result.status ?? 1) !== 0) {
+        failed = true;
+    }
 }
 
-process.exit(result.status ?? 1);
+process.exit(failed ? 1 : 0);

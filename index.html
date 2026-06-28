@@ -5,33 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <meta name="description" content="Корпоративный IT-портал 21VEK: заявки в IT Support, полезные сервисы и вход через Yandex 360.">
     <meta name="robots" content="noindex,nofollow">
-    <title>IT-Support · 21VEK — заявки и сервисы</title>
+    <title>IT-Support — заявки и сервисы</title>
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="/assets/favicon.svg">
     <link rel="preconnect" href="https://avatars.yandex.net" crossorigin>
     <style id="portal-auth-critical">
         html.portal-auth-pending .app-layout,
         html.portal-auth-pending .skip-link,
-        html.portal-auth-pending #portalGlobalNotice,
-        html.portal-auth-pending #portalSoonTip {
+        html.portal-auth-pending #portalGlobalNotice {
             display: none !important;
         }
     </style>
     <script src="/js/portal-search-hotkey.js"></script>
     <script src="/js/portal-theme-init.js"></script>
-    <link rel="stylesheet" href="/css/variables.css">
-    <link rel="stylesheet" href="/css/utilities.css">
-    <link rel="stylesheet" href="/css/background.css">
-    <link rel="stylesheet" href="/css/layout.css">
-    <link rel="stylesheet" href="/css/nav.css">
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/cards.css">
-    <link rel="stylesheet" href="/css/themes.css">
-    <link rel="stylesheet" href="/css/scrollbars.css">
-    <link rel="stylesheet" href="/css/modal.css">
-    <link rel="stylesheet" href="/css/mobile.css">
-    <link rel="stylesheet" href="/css/tour.css">
-    <link rel="stylesheet" href="/css/auth.css">
+    <link rel="preload" href="/css/portal.bundle.css?v=mqye6s5h.1v" as="style">
+    <link rel="stylesheet" href="/css/portal.bundle.css?v=mqye6s5h.1v">
 </head>
 <body>
 <a class="skip-link" href="#section-support" hidden>Перейти к содержимому</a>
@@ -43,7 +31,7 @@
     <div class="portal-auth-gate__panel">
         <img src="/assets/logo-21vek.svg" class="portal-auth-gate__logo" alt="21VEK" width="140" height="50">
         <div id="portalAuthGateStepIntro" class="portal-auth-gate__step">
-            <h1 class="portal-auth-gate__title" id="portalAuthGateTitle">IT-Support · 21VEK</h1>
+            <h1 class="portal-auth-gate__title" id="portalAuthGateTitle">IT-Support</h1>
             <p class="portal-auth-gate__desc">Войдите корпоративной учётной записью Яндекс (@21vek.by). После нажатия откроется Яндекс ID — выберите нужный аккаунт.</p>
             <p id="portalAuthGateError" class="portal-auth-gate__error hidden" role="alert"></p>
             <button type="button" id="portalAuthLoginBtn" class="btn-primary portal-auth-gate__btn">Войти через Яндекс</button>
@@ -52,7 +40,6 @@
     </div>
 </div>
 <div id="portalGlobalNotice" class="portal-global-notice hidden" role="alert" aria-live="assertive" aria-atomic="true"></div>
-<div id="portalSoonTip" class="portal-soon-tip hidden" role="tooltip" aria-hidden="true">скоро</div>
 <div class="page-bg" aria-hidden="true">
     <div class="page-bg__watermark">21vek.by</div>
     <div class="page-bg__blob page-bg__blob--1"></div>
@@ -66,8 +53,8 @@
                 <div class="header-utility">
                     <div class="header-links">
                         <div class="header-links__primary">
-                            <a class="header-link-btn" data-portal-link="wiki" href="https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/" target="_blank" rel="noopener noreferrer">WIKI</a>
-                            <a class="header-link-btn" data-portal-link="learning" href="https://wiki.yandex.ru/homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov/" target="_blank" rel="noopener noreferrer">Обучение</a>
+                            <a class="header-link-btn" data-portal-link="wiki" href="/wiki/">WIKI</a>
+                            <a class="header-link-btn" data-portal-link="learning" href="/wiki/">Обучение</a>
                         </div>
                         <div class="header-links__actions">
                             <button id="tourReplayBtn" class="header-link-btn header-link-btn--tour" type="button">Показать тур</button>
@@ -83,7 +70,7 @@
                         <button class="header-home-btn" id="homeTitleBtn" type="button">
                             <span class="header-brand">
                                 <img src="/assets/logo-21vek.svg" class="header-brand__logo" alt="21VEK" width="112" height="40">
-                                <h1 id="portalTagline">IT-Support · 21VEK</h1>
+                                <h1 id="portalTagline">IT-Support</h1>
                             </span>
                         </button>
                         <p>Найдите нужный сервис и оформите ИТ-заявку за пару кликов.</p>
@@ -143,6 +130,10 @@
 
             <section class="search-empty-state hidden" id="searchEmptyState" role="status" aria-live="polite" aria-hidden="true">
                 <p>Ничего не найдено. Уточните запрос или сбросьте фильтр.</p>
+                <div id="wikiSearchSuggestions" class="search-empty-state__wiki hidden" aria-hidden="true">
+                    <p class="search-empty-state__wiki-title">Похожее в базе знаний:</p>
+                    <ul id="wikiSearchSuggestionsList" class="search-empty-state__wiki-list"></ul>
+                </div>
                 <button class="btn-secondary search-empty-state__reset" id="clearSearchBtn" type="button">Сбросить поиск</button>
             </section>
 
@@ -445,25 +436,28 @@
     </div>
 </div>
 
-<script src="/js/config.js"></script>
-<script src="/js/config.local.js"></script>
-<script src="/js/auth/index.js"></script>
-<script src="/js/auth/gate.js"></script>
-<script src="/js/auth/ui.js"></script>
-<script src="/js/modal.js"></script>
-<script src="/js/form.js"></script>
-<script src="/js/tracker.js"></script>
-<script src="/js/theme.js"></script>
-<script src="/js/nav.js"></script>
-<script src="/js/search-index.js"></script>
-<script src="/js/search.js"></script>
-<script src="/js/cards.js"></script>
-<script src="/js/request-types.js"></script>
-<script src="/js/app.js"></script>
-<script src="/js/request-stats.js"></script>
-<script src="/js/tour/storage.js"></script>
-<script src="/js/tour/steps.js"></script>
-<script src="/js/tour/spotlight.js"></script>
-<script src="/js/tour/index.js"></script>
+<script src="/js/config.js" defer></script>
+<script src="/js/config.local.js" defer onerror="window.PortalConfigLocal=window.PortalConfigLocal||{}"></script>
+<script src="/js/auth/errors.js" defer></script>
+<script src="/js/auth/index.js" defer></script>
+<script src="/js/auth/gate.js" defer></script>
+<script src="/js/auth/ui.js" defer></script>
+<script src="/js/modal.js" defer></script>
+<script src="/js/form.js" defer></script>
+<script src="/js/tracker.js" defer></script>
+<script src="/js/theme.js" defer></script>
+<script src="/js/nav.js" defer></script>
+<script src="/js/search-index-loader.js" defer></script>
+<script src="/js/search.js" defer></script>
+<script src="/js/cards.js" defer></script>
+<script src="/js/request-types.js" defer></script>
+<script src="/js/app/wiki-links.js" defer></script>
+<script src="/js/app/hr-wizard.js" defer></script>
+<script src="/js/app.js" defer></script>
+<script src="/js/request-stats.js" defer></script>
+<script src="/js/tour/storage.js" defer></script>
+<script src="/js/tour/steps.js" defer></script>
+<script src="/js/tour/spotlight.js" defer></script>
+<script src="/js/tour/index.js" defer></script>
 </body>
 </html>

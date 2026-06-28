@@ -1,4 +1,6 @@
 [data-theme="dark"] {
+    --accent-soft: rgba(255, 31, 122, 0.22);
+
     --surface-page: #0d0f14;
     --surface-card: #171b24;
     --surface-card-soft: #1c2130;
@@ -35,6 +37,8 @@
 
     --selection-bg: color-mix(in srgb, var(--accent-pink-start) 42%, var(--accent-deep) 18%);
     --selection-color: #ffffff;
+
+    --danger-soft: rgba(248, 113, 113, 0.42);
 }
 
 @supports not (color: color-mix(in srgb, red 50%, blue)) {

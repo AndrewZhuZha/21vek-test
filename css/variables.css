@@ -24,6 +24,7 @@
     --accent-pink-start: #ff1f7a;
     --accent-pink-end: #ff7350;
     --accent-deep: #c4006b;
+    --accent-soft: #ffd9ea;
 
     --surface-page: #f6f7f9;
     --surface-card: #ffffff;
@@ -36,8 +37,8 @@
     --text-muted: #6b7280;
     --text-accent: #2c5a74;
 
-    --border-subtle: rgba(16, 24, 40, 0.08);
-    --border-soft: rgba(16, 24, 40, 0.04);
+    --border-subtle: rgba(16, 24, 40, 0.12);
+    --border-soft: rgba(16, 24, 40, 0.08);
     --border-brand-soft: rgba(221, 212, 255, 0.8);
 
     --overlay-bg: rgba(0, 0, 0, 0.5);
@@ -68,6 +69,16 @@
 
     --selection-bg: color-mix(in srgb, var(--accent-pink-start) 26%, var(--accent-pink-end) 10%);
     --selection-color: var(--text-primary);
+
+    --danger-soft: rgba(229, 72, 77, 0.38);
+    --motion-interactive: 0.14s linear;
+    --motion-snap: 0.1s cubic-bezier(0.22, 1, 0.36, 1);
+    --motion-lift: 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+
+    /* Wiki reader (shared with portal tokens) */
+    --wiki-sidebar-width: clamp(272px, 28vw, 340px);
+    --wiki-image-max-width: min(100%, 560px);
+    --wiki-content-max-width: 880px;
 }
 
 @supports not (color: color-mix(in srgb, red 50%, blue)) {

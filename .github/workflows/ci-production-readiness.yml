@@ -24,6 +24,32 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Wiki artifact gate
+        run: |
+          if [ "${WIKI_REQUIRED:-false}" != "true" ]; then
+            echo "WIKI_REQUIRED=false, skipping strict wiki artifact gate."
+            exit 0
+          fi
+          node <<'EOF'
+          const fs = require('node:fs');
+          const raw = fs.readFileSync('data/wiki-search.json', 'utf8');
+          const parsed = JSON.parse(raw);
+          const count = Number.isFinite(Number(parsed?.count))
+            ? Number(parsed.count)
+            : (Array.isArray(parsed?.items) ? parsed.items.length : 0);
+          if (count <= 0) {
+            console.error('Wiki artifact gate failed: data/wiki-search.json has zero items.');
+            process.exit(1);
+          }
+          console.log(`Wiki artifact gate passed. count=${count}`);
+          EOF
+
+      - name: Wiki parser audit
+        run: npm run audit:wiki-parser
+
+      - name: Backend unit tests
+        run: npm run test:backend
+
       - name: Start backend
         run: |
           npm start > /tmp/portal.log 2>&1 &
@@ -38,6 +64,9 @@ jobs:
 
       - name: Production smoke checks
         run: PORTAL_URL=http://127.0.0.1:3000 npm run verify:prod
+
+      - name: Wiki smoke (disabled mode)
+        run: PORTAL_URL=http://127.0.0.1:3000 WIKI_EXPECT_ENABLED=false npm run verify:wiki
 
       - name: Install Chromium
         run: |
@@ -54,9 +83,108 @@ jobs:
 
       - name: Accessibility smoke (axe)
         env:
-          A11Y_URL: http://127.0.0.1:3000/
+          A11Y_URLS: http://127.0.0.1:3000/,http://127.0.0.1:3000/wiki/
           A11Y_REQUIRED: "true"
         run: npm run verify:a11y
 
       - name: Dependency audit (root + backend)
         run: npm run audit:deps
+
+  scale-redis-smoke:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start backend (redis sessions + scale mode)
+        env:
+          SESSION_STORE: redis
+          SESSION_REDIS_URL: redis://127.0.0.1:6379
+          RATE_LIMIT_SCALE_MODE: "true"
+          YANDEX360_DEFER_DIRECTORY: "true"
+          REQUEST_LOG_SAMPLE_RATE: "0.01"
+        run: |
+          npm start > /tmp/portal-redis.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/portal-redis.log
+          exit 1
+
+      - name: Health and auth config smoke
+        run: |
+          curl -fsS http://127.0.0.1:3000/api/health
+          curl -fsS http://127.0.0.1:3000/api/auth/config-check
+
+  wiki-live:
+    if: ${{ secrets.YANDEX_WIKI_OAUTH_TOKEN != '' && (secrets.YANDEX_WIKI_ORG_ID != '' || secrets.YANDEX360_ORG_ID != '') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Refresh wiki search artifacts
+        env:
+          YANDEX_WIKI_ENABLED: "true"
+          YANDEX_WIKI_OAUTH_TOKEN: ${{ secrets.YANDEX_WIKI_OAUTH_TOKEN }}
+          YANDEX_WIKI_ORG_ID: ${{ secrets.YANDEX_WIKI_ORG_ID }}
+          YANDEX360_ORG_ID: ${{ secrets.YANDEX360_ORG_ID }}
+          YANDEX_WIKI_BASE_SLUG: ${{ vars.YANDEX_WIKI_BASE_SLUG }}
+          WIKI_INDEX_MIN_COUNT: "1"
+        run: npm run refresh:wiki-search
+
+      - name: Start backend (wiki-enabled)
+        env:
+          YANDEX_WIKI_ENABLED: "true"
+          YANDEX_WIKI_OAUTH_TOKEN: ${{ secrets.YANDEX_WIKI_OAUTH_TOKEN }}
+          YANDEX_WIKI_ORG_ID: ${{ secrets.YANDEX_WIKI_ORG_ID }}
+          YANDEX360_ORG_ID: ${{ secrets.YANDEX360_ORG_ID }}
+          YANDEX_WIKI_BASE_SLUG: ${{ vars.YANDEX_WIKI_BASE_SLUG }}
+        run: |
+          npm start > /tmp/portal-wiki.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/portal-wiki.log
+          exit 1
+
+      - name: Wiki smoke checks (enabled mode)
+        env:
+          PORTAL_URL: http://127.0.0.1:3000
+          WIKI_EXPECT_ENABLED: "true"
+        run: npm run verify:wiki

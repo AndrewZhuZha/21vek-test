@@ -15,6 +15,7 @@ COPY js/ ./js/
 COPY errors/ ./errors/
 COPY assets/ ./assets/
 COPY index.html ./
+COPY wiki.html ./
 RUN npm run build
 COPY backend/ ./backend/
 

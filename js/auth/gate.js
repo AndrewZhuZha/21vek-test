@@ -109,7 +109,10 @@
         }
         const authError = readAuthErrorFromUrl();
         if (authError) {
-            showAuthError(decodeURIComponent(authError));
+            const message = window.PortalAuthErrors?.humanize
+                ? window.PortalAuthErrors.humanize(decodeURIComponent(authError))
+                : decodeURIComponent(authError);
+            showAuthError(message);
             stripAuthErrorFromUrl();
         }
     });

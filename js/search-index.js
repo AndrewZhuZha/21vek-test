@@ -4,8 +4,8 @@
  * Do not edit manually.
  */
 window.PortalSearchIndex = {
-    "version": 1,
-    "generatedAt": "2026-06-27T18:43:25.645Z",
+    "version": 3,
+    "generatedAt": "2026-06-28T23:00:30.757Z",
     "globalSynonyms": {
         "принтер": [
             "мфу",
@@ -1077,8 +1077,10 @@ window.PortalSearchIndex = {
             "corpus": "база знаний (it-портал) инструкции, руководства, частые решения полезное wiki cmdb справочник база знаний сервисы инструкция руководство частые решения howto wms 1с тсд склад"
         }
     },
+    "wikiPages": {},
     "stats": {
         "sections": 9,
-        "cards": 23
+        "cards": 23,
+        "wikiPages": 0
     }
 };

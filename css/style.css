@@ -173,44 +173,8 @@ a {
     transition: color 0.12s ease;
 }
 
-.header-link-btn:not(.header-link-btn--placeholder):hover {
+.header-link-btn:hover {
     color: var(--accent-deep);
-}
-
-.header-link-btn--placeholder {
-    color: color-mix(in srgb, var(--text-muted) 72%, transparent);
-    cursor: default;
-    white-space: nowrap;
-}
-
-.header-link-btn--placeholder:hover,
-.header-link-btn--placeholder:focus-visible {
-    color: color-mix(in srgb, var(--text-muted) 72%, transparent);
-}
-
-.portal-soon-tip {
-    position: fixed;
-    z-index: 10002;
-    pointer-events: none;
-    padding: 0.16rem 0.4rem;
-    border-radius: var(--radius-sm);
-    font-size: 0.62rem;
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: 0.02em;
-    color: var(--text-muted);
-    background: var(--surface-card);
-    border: 1px solid var(--border-soft);
-    box-shadow: var(--shadow-soft);
-    white-space: nowrap;
-}
-
-@supports not (color: color-mix(in srgb, red 50%, blue)) {
-    .header-link-btn--placeholder,
-    .header-link-btn--placeholder:hover,
-    .header-link-btn--placeholder:focus-visible {
-        color: rgba(107, 114, 128, 0.78);
-    }
 }
 
 .header-link-btn--tour {
@@ -352,7 +316,8 @@ a {
     min-width: 0;
 }
 
-#cardSearch {
+#cardSearch,
+#wikiSearchInput {
     width: 100%;
     min-height: 38px;
     padding: 0.54rem 2.2rem 0.54rem 2rem;
@@ -373,20 +338,24 @@ a {
         background-color 0.2s ease;
 }
 
-.search-field.has-value #cardSearch {
+.search-field.has-value #cardSearch,
+.search-field.has-value #wikiSearchInput {
     padding-right: 2.55rem;
 }
 
-.search-field.is-searching.has-value #cardSearch {
+.search-field.is-searching.has-value #cardSearch,
+.search-field.is-searching.has-value #wikiSearchInput {
     padding-right: 3.15rem;
 }
 
-.search-field.is-typing #cardSearch {
+.search-field.is-typing #cardSearch,
+.search-field.is-typing #wikiSearchInput {
     border-color: color-mix(in srgb, var(--accent-deep) 34%, var(--border-subtle));
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-deep) 18%, transparent);
 }
 
-.search-field.is-searching #cardSearch {
+.search-field.is-searching #cardSearch,
+.search-field.is-searching #wikiSearchInput {
     padding-right: 2.55rem;
 }
 
@@ -423,7 +392,9 @@ a {
 }
 
 #cardSearch::-webkit-search-cancel-button,
-#cardSearch::-webkit-search-decoration {
+#cardSearch::-webkit-search-decoration,
+#wikiSearchInput::-webkit-search-cancel-button,
+#wikiSearchInput::-webkit-search-decoration {
     -webkit-appearance: none;
     appearance: none;
     display: none;
@@ -490,18 +461,22 @@ a {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-deep) 30%, transparent);
 }
 
-#cardSearch::placeholder {
+#cardSearch::placeholder,
+#wikiSearchInput::placeholder {
     color: color-mix(in srgb, var(--text-muted) 72%, transparent);
 }
 
 #cardSearch:focus-visible,
-.search-field.is-search-hotkey #cardSearch {
+#wikiSearchInput:focus-visible,
+.search-field.is-search-hotkey #cardSearch,
+.search-field.is-search-hotkey #wikiSearchInput {
     outline: none;
     border-color: color-mix(in srgb, var(--accent-deep) 42%, var(--border-subtle));
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-deep) 22%, transparent);
 }
 
-.search-field.is-search-hotkey #cardSearch {
+.search-field.is-search-hotkey #cardSearch,
+.search-field.is-search-hotkey #wikiSearchInput {
     border-color: color-mix(in srgb, var(--accent-deep) 55%, var(--border-subtle));
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-deep) 28%, transparent);
 }
@@ -638,6 +613,42 @@ a {
 .search-empty-state__reset {
     min-height: 40px;
     min-width: 170px;
+}
+
+.search-empty-state__wiki {
+    width: min(620px, 100%);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface-card) 94%, transparent);
+    padding: 0.62rem 0.7rem;
+    text-align: left;
+}
+
+.search-empty-state__wiki-title {
+    margin: 0 0 0.35rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.search-empty-state__wiki-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.26rem;
+}
+
+.search-empty-state__wiki-link {
+    display: inline-block;
+    text-decoration: none;
+    color: var(--accent);
+    font-size: 0.87rem;
+}
+
+.search-empty-state__wiki-link:hover,
+.search-empty-state__wiki-link:focus-visible {
+    color: var(--text-secondary);
+    text-decoration: underline;
 }
 
 .modal-overlay {
@@ -1142,7 +1153,8 @@ a {
         align-items: center;
     }
 
-    #cardSearch {
+    #cardSearch,
+    #wikiSearchInput {
         min-height: 44px;
     }
 

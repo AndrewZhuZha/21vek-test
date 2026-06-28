@@ -287,43 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initScrollToTop(scrollToTop);
-    initSoonTooltip();
 });
-
-function initSoonTooltip() {
-    const tip = document.getElementById('portalSoonTip');
-    const placeholders = document.querySelectorAll('.header-link-btn--placeholder');
-    if (!tip || !placeholders.length) return;
-
-    let visible = false;
-    const offset = 14;
-
-    function position(clientX, clientY) {
-        tip.style.left = `${clientX + offset}px`;
-        tip.style.top = `${clientY + offset}px`;
-    }
-
-    function show(event) {
-        visible = true;
-        tip.classList.remove('hidden');
-        tip.setAttribute('aria-hidden', 'false');
-        position(event.clientX, event.clientY);
-    }
-
-    function hide() {
-        visible = false;
-        tip.classList.add('hidden');
-        tip.setAttribute('aria-hidden', 'true');
-    }
-
-    placeholders.forEach((element) => {
-        element.addEventListener('mouseenter', show);
-        element.addEventListener('mousemove', (event) => {
-            if (visible) position(event.clientX, event.clientY);
-        });
-        element.addEventListener('mouseleave', hide);
-    });
-}
 
 function initScrollToTop(scrollToTopHandler) {
     const button = document.getElementById('scrollToTopBtn');

@@ -1,0 +1,40 @@
+# Overlay для масштабирования: Redis + nginx (статика) + N реплик portal.
+# Запуск:
+#   npm run build
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.scale.yml up -d --build --scale portal=3
+# Проверка:
+#   curl http://localhost:8080/api/health
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  portal:
+    ports: []
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      SESSION_STORE: redis
+      SESSION_REDIS_URL: redis://redis:6379
+      RATE_LIMIT_SCALE_MODE: "true"
+      REQUEST_LOG_SAMPLE_RATE: "0.01"
+      YANDEX360_DEFER_DIRECTORY: "true"
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "${NGINX_HTTP_PORT:-8080}:80"
+    volumes:
+      - ./deploy/nginx/portal.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./:/var/www/portal:ro
+    depends_on:
+      - portal

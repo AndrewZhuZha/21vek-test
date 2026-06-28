@@ -85,6 +85,10 @@ try {
     const health = await request('/api/health');
     check(health.status === 200 && health.body?.ok === true, 'GET /api/health → 200 ok');
     check(
+        health.body?.service === '21vek-it-portal' && health.body?.wiki === undefined,
+        'GET /api/health не раскрывает wiki diagnostics'
+    );
+    check(
         typeof health.headers['x-request-id'] === 'string' && health.headers['x-request-id'].length >= 8,
         'GET /api/health возвращает X-Request-Id'
     );
@@ -118,6 +122,33 @@ try {
 
     const me = await request('/api/auth/me');
     check(me.status === 401, 'GET /api/auth/me без сессии → 401');
+
+    const wikiConfig = await request('/api/wiki/config-check');
+    check(wikiConfig.status === 200, 'GET /api/wiki/config-check → 200');
+    check(
+        typeof wikiConfig.body?.enabled === 'boolean' && typeof wikiConfig.body?.configured === 'boolean',
+        'wiki config-check содержит enabled/configured'
+    );
+    check(
+        typeof wikiConfig.body?.externalUrl === 'string' && wikiConfig.body.externalUrl.length > 0,
+        'wiki config-check содержит externalUrl'
+    );
+    check(
+        wikiConfig.body?.snapshot === undefined && wikiConfig.body?.cache === undefined,
+        'wiki config-check не раскрывает snapshot/cache'
+    );
+
+    const blockedData = await request('/data/wiki-search.json');
+    check(blockedData.status === 404, 'GET /data/wiki-search.json → 404 (не публичный)');
+
+    const wikiTreeUnauth = await request('/api/wiki/tree');
+    check(wikiTreeUnauth.status === 401, 'GET /api/wiki/tree без сессии → 401');
+
+    const wikiPageUnauth = await request('/api/wiki/page?slug=homepage');
+    check(wikiPageUnauth.status === 401, 'GET /api/wiki/page без сессии → 401');
+
+    const wikiSearchUnauth = await request('/api/wiki/search?q=test');
+    check(wikiSearchUnauth.status === 401, 'GET /api/wiki/search без сессии → 401');
 
     const trackerUnauth = await request('/api/tracker/issues', {
         method: 'POST',
@@ -190,16 +221,33 @@ try {
         'index.html содержит preconnect для avatars.yandex.net'
     );
 
+    const wikiReader = await request('/wiki/');
+    check(wikiReader.status === 200, 'GET /wiki/ → 200 (wiki reader)');
+    check(
+        String(wikiReader.headers['cache-control'] || '').includes('no-store'),
+        'GET /wiki/ отдаёт Cache-Control: no-store'
+    );
+    const wikiHtml = String(wikiReader.body || '');
+    check(wikiHtml.includes('id="wikiTree"'), 'wiki.html содержит контейнер дерева');
+    check(wikiHtml.includes('/js/wiki/reader.js'), 'wiki.html подключает /js/wiki/reader.js');
+
+    const wikiApiJs = await request('/js/wiki/api.js');
+    check(wikiApiJs.status === 200, 'GET /js/wiki/api.js → 200');
+    const wikiReaderJs = await request('/js/wiki/reader.js');
+    check(wikiReaderJs.status === 200, 'GET /js/wiki/reader.js → 200');
+    const wikiCss = await request('/css/wiki.bundle.css');
+    check(wikiCss.status === 200, 'GET /css/wiki.bundle.css → 200');
+
     const robots = await request('/robots.txt');
     const robotsBody = String(robots.body || '');
     check(robots.status === 200, 'GET /robots.txt → 200');
     check(robotsBody.includes('Disallow: /'), 'robots.txt запрещает индексацию');
 
-    const styleCss = await request('/css/style.css');
-    check(styleCss.status === 200, 'GET /css/style.css → 200');
+    const styleCss = await request('/css/portal.bundle.css');
+    check(styleCss.status === 200, 'GET /css/portal.bundle.css → 200');
     check(
         String(styleCss.headers['cache-control'] || '').includes('max-age=3600'),
-        'GET /css/style.css отдаёт cache-control для статики'
+        'GET /css/portal.bundle.css отдаёт cache-control для статики'
     );
 
     const deepUnknown = await request('/qa/non-existent/path');
