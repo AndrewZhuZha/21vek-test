@@ -11,6 +11,9 @@ let orgIdCache = null;
 /** @type {Map<string, { position: string | null, department: string | null, expiresAt: number }>} */
 const positionCache = new Map();
 
+/** @type {Map<string, Promise<{ position: string | null, department: string | null } | null>>} */
+const directoryInFlight = new Map();
+
 /**
  * @param {string | undefined | null} value
  * @returns {Set<string>}
@@ -399,14 +402,41 @@ export async function enrichUserFromDirectory(accessToken, user, options = {}) {
         return user;
     }
 
+    const inFlightKey = String(user.email || user.login || '').trim().toLowerCase();
+    if (inFlightKey && directoryInFlight.has(inFlightKey)) {
+        const directoryMeta = await directoryInFlight.get(inFlightKey);
+        if (!directoryMeta) {
+            return user;
+        }
+        cacheDirectoryMeta(user.email, directoryMeta);
+        return {
+            ...user,
+            position: directoryMeta.position || user.position || null,
+            department: directoryMeta.department || user.department || null
+        };
+    }
+
     const fetchMeta = fetchDirectoryUserMeta(accessToken, user.email, user.login, options);
     const timeoutMs = Number(options.timeoutMs) || 0;
-    const directoryMeta = timeoutMs > 0
-        ? await Promise.race([
+    const resolvingPromise = timeoutMs > 0
+        ? Promise.race([
             fetchMeta,
             new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs))
         ])
-        : await fetchMeta;
+        : fetchMeta;
+
+    if (inFlightKey) {
+        directoryInFlight.set(inFlightKey, resolvingPromise);
+    }
+
+    let directoryMeta;
+    try {
+        directoryMeta = await resolvingPromise;
+    } finally {
+        if (inFlightKey) {
+            directoryInFlight.delete(inFlightKey);
+        }
+    }
 
     if (!directoryMeta) {
         console.warn(`Yandex 360: должность не найдена для ${user.email || user.login}`);

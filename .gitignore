@@ -9,3 +9,5 @@ js/config.local.js
 backend/node_modules/
 node_modules/
 tmp-wiki-*.html
+tmp-wiki-audit.json
+tmp-wiki-page.html

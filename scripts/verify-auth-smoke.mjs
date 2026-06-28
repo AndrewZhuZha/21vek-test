@@ -270,5 +270,5 @@ try {
 }
 
 console.log(ok ? '\n✓ Все автоматические проверки пройдены\n' : '\n✗ Есть ошибки\n');
-console.log('Ручной чек-лист: docs/SMOKE-TESTS.md §10 (вход @21vek.by, logout, FIO)\n');
+console.log('Ручной чек-лист: docs/TESTING.md (вход @21vek.by, logout, FIO)\n');
 process.exit(ok ? 0 : 1);

@@ -1,65 +1,210 @@
 # Архитектура
 
-Статический сайт: HTML + vanilla JS + CSS, без bundler. Модули — глобалы на `window`.
+Корпоративный ИТ-портал 21vek: статический фронтенд (HTML + vanilla JS + CSS) и Node.js backend (Express) для OAuth, Wiki proxy и Tracker demo.
 
-## Порядок скриптов
+## Общая схема
 
-**`<head>`:** `portal-search-hotkey.js`, `portal-theme-init.js`, `portal.bundle.css` (prod)
+```mermaid
+flowchart LR
+  Browser[Browser]
+  Nginx[nginx optional]
+  Node[Express portal]
+  Redis[(Redis)]
+  YandexOAuth[oauth.yandex.ru]
+  YandexWiki[Wiki API]
+  YandexDir[Directory API]
 
-**Конец `<body>`:**
+  Browser --> Nginx
+  Nginx -->|static css js assets| Browser
+  Nginx -->|api spa| Node
+  Browser -->|dev direct| Node
+  Node --> Redis
+  Node --> YandexOAuth
+  Node --> YandexWiki
+  Node --> YandexDir
 ```
-config.js → config.local.js → auth/errors.js → auth/* → modal.js → form.js → tracker.js →
-theme.js → nav.js → search-index-loader.js → search.js → cards.js → request-types.js →
-app/wiki-links.js → app/hr-wizard.js → app.js → request-stats.js → tour/*
-```
 
-**Страница `/wiki/` (`wiki.html`):**
-```
-config.js → config.local.js → auth/errors.js → auth/* → theme.js → wiki/api.js → wiki/tour.js → wiki/reader.js
-```
+**Production (single):** nginx → один процесс Node на `:3000`.
 
-## CSRF
+**Production (scale):** nginx отдаёт `/css`, `/js`, `/assets`, `/errors` с диска; `/api`, `/`, `/wiki` проксирует на 3 реплики Node; Redis хранит сессии и Wiki-кэш. См. [SCALE.md](SCALE.md).
 
-Mutating endpoints (`POST /api/auth/logout`, `POST /api/tracker/*`) защищены проверкой `Origin`/`Referer` против `PUBLIC_URL` ([backend/src/middleware/csrf.js](../backend/src/middleware/csrf.js)). Wiki routes — только GET. Synchronizer tokens не используются: same-origin SPA + `SameSite=Lax` cookie.
+---
 
-## Ключевые модули
+## Backend
 
-| Глобал | Назначение |
+**Точка входа:** [`backend/src/index.js`](../backend/src/index.js)
+
+### Middleware (порядок)
+
+1. `validateSecurityConfig()` — блокирует небезопасный prod-запуск
+2. Session — только для `/api/*` ([`session.js`](../backend/src/session.js), `needsSession()`)
+3. `compression` — gzip от 1 KB
+4. Versioned cache — `?v=` на bundles/wiki JS → `immutable` 1 год
+5. `helmet` — CSP, HSTS (prod), CORP, referrerPolicy, Permissions-Policy
+6. `express.json` — лимит 100 KB
+7. Request ID + sampled HTTP logging
+8. API routers + static + SPA fallback
+
+### Маршруты API
+
+| Prefix | Файл | Endpoints |
+|--------|------|-----------|
+| inline | `index.js` | `GET /api/health`, `GET /api/health/details` (auth) |
+| `/api/auth` | [`routes/auth.js`](../backend/src/routes/auth.js) | login, callback, me, logout, config-check |
+| `/api/wiki` | [`routes/wiki.js`](../backend/src/routes/wiki.js) | config-check (public), tree, page, search, asset, auth-check, audit |
+| `/api/tracker` | [`routes/tracker.js`](../backend/src/routes/tracker.js) | POST issues, password-reset |
+
+### Middleware-модули
+
+| Модуль | Назначение |
 |--------|------------|
-| `PortalConfig` | Конфиг ([js/config.js](../js/config.js) + local) |
-| `PortalRequestTypes` | Типы заявок (сборка из JSON) |
-| `PortalSearchIndex` | Индекс поиска (сборка) |
-| `PortalAuth` | OAuth gate, login/logout |
-| `PortalTracker` | Отправка заявок в backend |
-| `PortalModal`, `PortalForm` | Модалки и валидация |
-| `PortalWikiApi` | Клиент `/api/wiki/*` для wiki reader |
+| [`requireAuth.js`](../backend/src/middleware/requireAuth.js) | Проверка сессии; guest types для части заявок |
+| [`csrf.js`](../backend/src/middleware/csrf.js) | Origin/Referer на mutating POST |
+| [`rateLimit.js`](../backend/src/middleware/rateLimit.js) | Лимиты auth, wiki, tracker, health; scale mode |
+| [`wikiCache.js`](../backend/src/middleware/wikiCache.js) | Memory (2000 entries) + Redis (`portal:wiki:`), dedup |
 
-Конфиг среды: [js/config.local.example.js](../js/config.local.example.js). OAuth: [AUTH-SETUP.md](AUTH-SETUP.md).
+### Auth и сессии
 
-## События
+| Модуль | Роль |
+|--------|------|
+| [`yandex.js`](../backend/src/auth/yandex.js) | OAuth authorize, token exchange, profile |
+| [`yandex360.js`](../backend/src/auth/yandex360.js) | Directory: должность/отдел; defer на `/api/auth/me` |
+| [`sessionOAuth.js`](../backend/src/auth/sessionOAuth.js) | Минимизация OAuth token в session |
+| [`domain.js`](../backend/src/auth/domain.js) | Gate `@21vek.by` |
+
+**Cookie:** `portal.sid`, `httpOnly`, `secure` (prod), `sameSite: lax`, rolling, max age из `SESSION_MAX_AGE_DAYS`.
+
+**Store:** `memory` (dev) или `redis` (`portal:sess:` prefix). Scale mode требует Redis.
+
+### Wiki pipeline
+
+```
+GET /api/wiki/page
+  → scope guard (wikiScope.js)
+  → cache lookup (memory/redis)
+  → Yandex Wiki API (yandexWiki.js)
+  → @diplodoc/transform (timeout + max input)
+  → sanitize-html + rewrite links/assets
+  → cache store → JSON { html, title, ... }
+```
+
+- **Scope:** только `YANDEX_WIKI_BASE_SLUG` и потомки
+- **Assets:** `/api/wiki/asset` с per-user cache keys (`asset:v2:{authHash}:…`)
+- **Service token:** `YANDEX_WIKI_OAUTH_TOKEN` для shared cache при scale
+
+### Tracker (demo)
+
+[`tracker/validate.js`](../backend/src/tracker/validate.js) валидирует payload. При `TRACKER_DEMO_MODE=true` возвращает `DEMO-{timestamp}` без вызова Yandex Tracker API. Prod API — в [ROADMAP.md](ROADMAP.md).
+
+### Статика и SPA
+
+- `/data/*` — всегда 404 (snapshot не публичен)
+- `express.static(projectRoot)` — HTML `no-store`, assets `max-age=3600`
+- `/` → `index.html`, `/wiki/*` → `wiki.html`
+- Несуществующие assets → plain 404; прочие пути → `errors/404.html`
+
+Конфигурация: [`backend/src/config.js`](../backend/src/config.js), шаблон [`backend/.env.example`](../backend/.env.example).
+
+---
+
+## Frontend
+
+Статический сайт без JS-бundler. Модули экспортируют globals на `window`.
+
+### Страницы
+
+| HTML | URL | Назначение |
+|------|-----|------------|
+| [`index.html`](../index.html) | `/` | Карточки услуг, поиск, модалки, auth gate |
+| [`wiki.html`](../wiki.html) | `/wiki/*` | Встроенный Wiki reader |
+| [`errors/*.html`](../errors/) | — | 400–504 (сборка `build:errors`) |
+
+### Порядок скриптов
+
+**`<head>`:** `portal-search-hotkey.js`, `portal-theme-init.js`, `portal.bundle.css`
+
+**Главная (конец body):**
+```
+config.js → config.local.js → auth/errors.js → auth/* → modal → form → tracker →
+theme → nav → search-index-loader → search → cards → request-types →
+app/wiki-links → app/hr-wizard → app → request-stats → tour/*
+```
+
+**Wiki (`wiki.html`):**
+```
+config.js → config.local.js → auth/errors.js → auth/* → theme → wiki/api → wiki/tour → wiki/reader
+```
+
+### Ключевые globals
+
+| Global | Файл | Назначение |
+|--------|------|------------|
+| `PortalConfig` | `js/config.js` + local | Конфиг среды |
+| `PortalAuth` | `js/auth/*` | OAuth gate, login/logout |
+| `PortalTracker` | `js/tracker.js` | POST `/api/tracker/*` |
+| `PortalSearchIndex` | `js/search-index.js` | Индекс поиска (build) |
+| `PortalWikiApi` | `js/wiki/api.js` | Клиент `/api/wiki/*` |
+
+### События
 
 | Событие | Когда |
 |---------|-------|
-| `portal:task-submitted` | Успешная заявка |
 | `portal:auth-ready` | Сессия проверена |
+| `portal:task-submitted` | Заявка отправлена |
 | `portal:theme-changed` | Смена темы |
 | `portal:filter-changed` | Поиск отфильтровал карточки |
 
-## Новая услуга
+### CSRF
 
-1. `<button class="service-card" data-request-type="...">` в `index.html`
-2. Запись в `data/request-types.json`
-3. При необходимости — `data/search.overrides.json`
-4. `npm run build:search`
+Mutating endpoints (`POST /api/auth/logout`, `POST /api/tracker/*`) проверяют `Origin`/`Referer` против `PUBLIC_URL`. Wiki — только GET. Same-origin SPA + `SameSite=Lax` cookie.
 
-Сборка проверяет соответствие HTML и JSON.
+---
 
-## Wiki reader
+## Data layer
 
-- Роут `/wiki/` отдаёт `wiki.html`.
-- Backend proxy: `/api/wiki/tree`, `/api/wiki/page`, `/api/wiki/search`.
-- Scope-guard: `/api/wiki/page` разрешает только `baseSlug` и descendants (выход за scope = `403`).
-- HTML санитизируется на backend (`sanitize-html`, allowlist) и повторно проверяется на frontend (defense-in-depth).
-- `/api/wiki/config-check` и `/api/health` содержат diagnostics: `enabled/configured`, snapshot `count/age`, cache degraded mode.
-- Кнопка «Редактировать в Wiki» всегда ведёт на `wiki.yandex.ru`.
-- Индекс для подсказок на главной: `data/wiki-search.json` → `npm run refresh:wiki-search` (sync + build + validate).
+| Файл | Источник | Назначение |
+|------|----------|------------|
+| `data/request-types.json` | Ручной | Типы заявок, поля форм |
+| `data/search.overrides.json` | Ручной | Синонимы поиска |
+| `data/wiki-search.json` | `sync-wiki-index.mjs` | Подсказки Wiki в поиске |
+| `js/search-index.js` | `build-search-index.mjs` | `window.PortalSearchIndex` |
+| `css/*.bundle.css` | `build-css-bundle.mjs` | Сжатые CSS |
+| `errors/*.html` | `build-error-pages.mjs` | Страницы ошибок |
+
+Generated artifacts **коммитятся** для zero-build Docker deploy. См. [DEVELOPMENT.md](DEVELOPMENT.md).
+
+---
+
+## Build pipeline
+
+```bash
+npm run build
+# = build:search + build:errors + build:css
+```
+
+Wiki sync (отдельно):
+```bash
+npm run refresh:wiki-search   # sync + build + validate
+```
+
+---
+
+## Docker overlays
+
+| Файл | Назначение |
+|------|------------|
+| `docker-compose.yml` | Базовый сервис `portal` |
+| `docker-compose.prod.yml` | Hardening, Redis default, wiki volume |
+| `docker-compose.scale.yml` | Redis + nginx + scale env |
+
+Подробнее: [DEPLOY.md](DEPLOY.md), [SCALE.md](SCALE.md).
+
+---
+
+## Связанные документы
+
+- [DEVELOPMENT.md](DEVELOPMENT.md) — локальная разработка
+- [guides/AUTH-SETUP.md](guides/AUTH-SETUP.md) — OAuth
+- [guides/WIKI-SETUP.md](guides/WIKI-SETUP.md) — Wiki
+- [SECURITY.md](SECURITY.md) — модель безопасности
+- [ROADMAP.md](ROADMAP.md) — дальнейшая работа

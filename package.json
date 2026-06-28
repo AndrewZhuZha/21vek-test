@@ -23,6 +23,8 @@
     "loadtest:api": "k6 run scripts/loadtest/portal-api.js",
     "loadtest:wiki": "k6 run scripts/loadtest/wiki-read.js",
     "loadtest:smoke": "node scripts/loadtest/run-smoke.mjs",
+    "loadtest:heavy": "node scripts/loadtest/run-heavy.mjs",
+    "verify:security": "npm run test:backend && npm run verify:auth",
     "test:backend": "node --test backend/test/*.test.js",
     "audit:deps": "npm audit --audit-level=high --strict-ssl=false && npm audit --prefix backend --audit-level=high --strict-ssl=false"
   }

@@ -1465,6 +1465,41 @@ async function resolveTransform() {
     return transformFn;
 }
 
+/**
+ * @param {string} content
+ * @param {(input: string, options: object) => { result?: { html?: string } }} transform
+ * @returns {Promise<string>}
+ */
+async function runWikiTransformSafely(content, transform) {
+    const input = String(content || '');
+    if (input.length > config.yandexWikiTransformMaxInputChars) {
+        throw createWikiError(413, 'Содержимое Wiki слишком большое для обработки.');
+    }
+
+    const timeoutMs = config.yandexWikiTransformTimeoutMs;
+    let timeoutId;
+    const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+            reject(new Error('Wiki transform timeout'));
+        }, timeoutMs);
+    });
+
+    try {
+        const transformed = await Promise.race([
+            Promise.resolve().then(() => transform(input, {
+                extractTitle: false,
+                needTitle: false
+            })),
+            timeoutPromise
+        ]);
+        return String(transformed?.result?.html || '').trim();
+    } finally {
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+    }
+}
+
 function rewriteWikiHref(href) {
     const rawHref = String(href || '').trim();
     if (!rawHref || rawHref.startsWith('#')) {
@@ -1784,11 +1819,7 @@ async function renderWikiContent(content, context = {}) {
         const transform = await resolveTransform();
         if (transform) {
             try {
-                const transformed = transform(withTreeMacros, {
-                    extractTitle: false,
-                    needTitle: false
-                });
-                html = String(transformed?.result?.html || '').trim();
+                html = await runWikiTransformSafely(withTreeMacros, transform);
             } catch (error) {
                 console.warn('YFM transform failed, using fallback renderer:', error instanceof Error ? error.message : error);
             }

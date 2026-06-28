@@ -1,5 +1,6 @@
 import session from 'express-session';
 import { config, getSessionCookieOptions } from './config.js';
+import { shouldPersistOAuthAccessToken } from './auth/sessionOAuth.js';
 
 /**
  * @returns {Promise<session.Store | null>}
@@ -26,6 +27,15 @@ async function createSessionStore() {
 }
 
 /**
+ * Сессия нужна только API-маршрутам — статика и HTML не трогают store.
+ * @param {import('express').Request} req
+ * @returns {boolean}
+ */
+export function needsSession(req) {
+    return String(req.path || '').startsWith('/api/');
+}
+
+/**
  * @param {import('express').Express} app
  */
 export async function setupSession(app) {
@@ -36,9 +46,10 @@ export async function setupSession(app) {
         secret: config.sessionSecret,
         resave: false,
         saveUninitialized: false,
+        rolling: true,
         cookie: {
             ...getSessionCookieOptions(),
-            maxAge: 7 * 24 * 60 * 60 * 1000
+            maxAge: config.sessionMaxAgeMs
         }
     };
 
@@ -47,7 +58,14 @@ export async function setupSession(app) {
         console.log('Session store: redis');
     }
 
-    app.use(session(options));
+    const sessionMiddleware = session(options);
+    app.use((req, res, next) => {
+        if (!needsSession(req)) {
+            next();
+            return;
+        }
+        sessionMiddleware(req, res, next);
+    });
 }
 
 /**
@@ -57,8 +75,10 @@ export async function setupSession(app) {
 export function setSessionUser(sessionData, user, accessToken) {
     sessionData.user = user;
     sessionData.oauthState = undefined;
-    if (accessToken) {
+    if (accessToken && shouldPersistOAuthAccessToken()) {
         sessionData.accessToken = accessToken;
+    } else {
+        sessionData.accessToken = undefined;
     }
 }
 

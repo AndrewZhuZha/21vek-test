@@ -82,6 +82,18 @@ const wikiDescendantsMaxRaw = Number(optionalEnv('YANDEX_WIKI_DESCENDANTS_MAX', 
 const wikiDescendantsMax = Number.isFinite(wikiDescendantsMaxRaw) && wikiDescendantsMaxRaw > 0
     ? Math.floor(wikiDescendantsMaxRaw)
     : 500;
+const wikiTransformTimeoutRaw = Number(optionalEnv('YANDEX_WIKI_TRANSFORM_TIMEOUT_MS', '8000'));
+const wikiTransformTimeoutMs = Number.isFinite(wikiTransformTimeoutRaw) && wikiTransformTimeoutRaw > 0
+    ? Math.floor(wikiTransformTimeoutRaw)
+    : 8000;
+const wikiTransformMaxInputRaw = Number(optionalEnv('YANDEX_WIKI_TRANSFORM_MAX_INPUT_CHARS', '500000'));
+const wikiTransformMaxInputChars = Number.isFinite(wikiTransformMaxInputRaw) && wikiTransformMaxInputRaw > 1000
+    ? Math.floor(wikiTransformMaxInputRaw)
+    : 500000;
+const sessionMaxAgeDaysRaw = Number(optionalEnv('SESSION_MAX_AGE_DAYS', '7'));
+const sessionMaxAgeDays = Number.isFinite(sessionMaxAgeDaysRaw) && sessionMaxAgeDaysRaw > 0
+    ? Math.floor(sessionMaxAgeDaysRaw)
+    : 7;
 const defaultWikiBaseSlug = 'homepage/otdel-texnicheskogo-soprovozhdenija/instrukcii/instrukcii-dlja-sotrudnikov';
 const defaultWikiExternalUrl = `https://wiki.yandex.ru/${defaultWikiBaseSlug}`;
 const rateLimitScaleMode = optionalEnv('RATE_LIMIT_SCALE_MODE', 'false').toLowerCase() === 'true';
@@ -107,6 +119,7 @@ export const config = {
     /** memory | redis */
     sessionStore: optionalEnv('SESSION_STORE', 'memory').toLowerCase(),
     sessionRedisUrl: optionalEnv('SESSION_REDIS_URL', ''),
+    sessionMaxAgeMs: sessionMaxAgeDays * 24 * 60 * 60 * 1000,
     requestLogging: optionalEnv('REQUEST_LOGGING', 'true').toLowerCase() !== 'false',
     /** 0..1: доля HTTP-запросов в лог (1 = все). При scale mode рекомендуется 0.01. */
     requestLogSampleRate: sampleRateEnv('REQUEST_LOG_SAMPLE_RATE', 1),
@@ -115,6 +128,7 @@ export const config = {
     rateLimitAuthConfigCheckMax: positiveIntEnv('RATE_LIMIT_AUTH_CONFIG_CHECK_MAX', 300),
     rateLimitWikiIpMax: positiveIntEnv('RATE_LIMIT_WIKI_IP_MAX', 600),
     rateLimitWikiSessionMax: positiveIntEnv('RATE_LIMIT_WIKI_SESSION_MAX', 300),
+    rateLimitHealthMax: positiveIntEnv('RATE_LIMIT_HEALTH_MAX', 3600),
     yandexWikiEnabled: optionalEnv('YANDEX_WIKI_ENABLED', 'false').toLowerCase() === 'true',
     yandexWikiOAuthToken: optionalEnv('YANDEX_WIKI_OAUTH_TOKEN', ''),
     yandexWikiOrgId: optionalEnv('YANDEX_WIKI_ORG_ID', ''),
@@ -131,6 +145,8 @@ export const config = {
     yandexWikiMaxResponseBytes: wikiMaxResponseBytes,
     yandexWikiMaxAssetBytes: wikiMaxAssetBytes,
     yandexWikiDescendantsMax: wikiDescendantsMax,
+    yandexWikiTransformTimeoutMs: wikiTransformTimeoutMs,
+    yandexWikiTransformMaxInputChars: wikiTransformMaxInputChars,
     yandexWikiExternalUrl: optionalEnv('YANDEX_WIKI_EXTERNAL_URL', defaultWikiExternalUrl),
     /** Dev/ops: GET /api/wiki/audit (полный scan). По умолчанию выключен. */
     yandexWikiAuditEnabled: optionalEnv('YANDEX_WIKI_AUDIT_ENABLED', 'false').toLowerCase() === 'true',
@@ -154,6 +170,11 @@ export function validateSecurityConfig() {
     }
 
     if (!config.isProduction) {
+        if (config.yandexWikiEnabled && !config.yandexWikiOAuthToken) {
+            console.warn(
+                'YANDEX_WIKI_ENABLED=true без YANDEX_WIKI_OAUTH_TOKEN (dev): в production service token обязателен'
+            );
+        }
         return;
     }
 
@@ -189,9 +210,9 @@ export function validateSecurityConfig() {
         console.warn('SESSION_STORE=memory в production: сессии не переживают перезапуск и не подходят для нескольких инстансов');
     }
 
-    if (config.rateLimitScaleMode && config.yandexWikiEnabled && !config.yandexWikiOAuthToken) {
-        console.warn(
-            'RATE_LIMIT_SCALE_MODE=true и YANDEX_WIKI_ENABLED=true без YANDEX_WIKI_OAUTH_TOKEN: Wiki-кэш фрагментируется по пользователям'
+    if (config.yandexWikiEnabled && !config.yandexWikiOAuthToken) {
+        throw new Error(
+            'YANDEX_WIKI_ENABLED=true в production требует YANDEX_WIKI_OAUTH_TOKEN (service token). См. docs/guides/WIKI-SETUP.md и docs/SECURITY.md'
         );
     }
 
@@ -203,7 +224,7 @@ export function validateSecurityConfig() {
 
     if (config.yandexWikiEnabled && !isWikiApiConfigured()) {
         throw new Error(
-            'YANDEX_WIKI_ENABLED=true, но отсутствует часть параметров Wiki API (токен/orgId/baseSlug). См. docs/WIKI-SETUP.md'
+            'YANDEX_WIKI_ENABLED=true, но отсутствует часть параметров Wiki API (токен/orgId/baseSlug). См. docs/guides/WIKI-SETUP.md'
         );
     }
 

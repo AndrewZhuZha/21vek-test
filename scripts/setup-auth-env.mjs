@@ -51,7 +51,7 @@ function buildEnv(map) {
     ];
     const lines = [
         '# Сгенерировано scripts/setup-auth-env.mjs',
-        '# Инструкция: docs/AUTH-SETUP.md',
+        '# Инструкция: docs/guides/AUTH-SETUP.md',
         ''
     ];
     for (const key of order) {

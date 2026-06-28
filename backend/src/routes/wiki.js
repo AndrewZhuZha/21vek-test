@@ -26,6 +26,16 @@ import { runWikiAudit } from '../auth/wikiAudit.js';
 
 export const wikiRouter = Router();
 
+wikiRouter.get('/config-check', wikiConfigCheckLimiter, async (_req, res) => {
+    const state = getWikiConfigState();
+    res.setHeader('Cache-Control', 'public, max-age=60');
+    res.json({
+        enabled: state.enabled,
+        configured: state.configured,
+        externalUrl: state.externalUrl
+    });
+});
+
 wikiRouter.use(wikiIpLimiter, wikiSessionLimiter);
 
 function sendWikiError(res, error) {
@@ -76,15 +86,6 @@ async function tryServeWikiCachedJson(req, res, cacheKey) {
     res.json(cached);
     return cached;
 }
-
-wikiRouter.get('/config-check', wikiConfigCheckLimiter, async (_req, res) => {
-    const state = getWikiConfigState();
-    res.json({
-        enabled: state.enabled,
-        configured: state.configured,
-        externalUrl: state.externalUrl
-    });
-});
 
 wikiRouter.get('/tree', requireAuth, async (req, res) => {
     try {

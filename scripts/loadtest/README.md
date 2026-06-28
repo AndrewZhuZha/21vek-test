@@ -5,7 +5,7 @@
 ## Требования
 
 - [k6](https://k6.io/docs/get-started/installation/) установлен локально или в CI
-- Портал запущен (рекомендуется scale-стек из `docs/SCALE-3000.md`)
+- Портал запущен (рекомендуется scale-стек из `docs/SCALE.md`)
 
 ## Переменные
 
@@ -33,4 +33,4 @@ WIKI_SESSION_COOKIE="portal.sid=..." k6 run scripts/loadtest/wiki-read.js
 
 ## Критерии приёмки
 
-См. [docs/SCALE-3000.md](../../docs/SCALE-3000.md).
+См. [docs/SCALE.md](../../docs/SCALE.md).

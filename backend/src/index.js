@@ -15,6 +15,8 @@ import { healthLimiter } from './middleware/rateLimit.js';
 
 const app = express();
 
+app.disable('x-powered-by');
+
 validateSecurityConfig();
 await setupSession(app);
 app.use(compression({
@@ -74,6 +76,9 @@ app.use(helmet({
         }
     },
     crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'same-origin' },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    dnsPrefetchControl: { allow: false },
     permissionsPolicy: {
         camera: [],
         microphone: [],
@@ -84,8 +89,11 @@ app.use(helmet({
 }));
 app.use(express.json({ limit: '100kb' }));
 
-function shouldLogHttpRequest() {
+function shouldLogHttpRequest(req) {
     if (!config.requestLogging) {
+        return false;
+    }
+    if (isStaticAssetRequest(req.path) || req.path === '/api/health') {
         return false;
     }
     if (config.requestLogSampleRate >= 1) {
@@ -105,7 +113,7 @@ app.use((req, res, next) => {
     res.setHeader('X-Request-Id', requestId);
 
     res.on('finish', () => {
-        if (!shouldLogHttpRequest()) {
+        if (!shouldLogHttpRequest(req)) {
             return;
         }
         const durationMs = Number(process.hrtime.bigint() - startedNs) / 1e6;
@@ -121,6 +129,18 @@ app.use((req, res, next) => {
         }));
     });
 
+    next();
+});
+
+app.use('/api/auth', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Pragma', 'no-cache');
+    next();
+});
+
+app.use('/api/tracker', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Pragma', 'no-cache');
     next();
 });
 
@@ -218,7 +238,9 @@ function nowIso() {
 
 app.use(express.static(staticRoot, {
     index: 'index.html',
-    maxAge: 60 * 60 * 1000,
+    etag: true,
+    lastModified: true,
+    maxAge: '1h',
     setHeaders(res, filePath) {
         if (filePath.endsWith('.html')) {
             res.setHeader('Cache-Control', 'no-store');
@@ -226,7 +248,7 @@ app.use(express.static(staticRoot, {
         }
         if (/\.(css|js|svg|png|jpg|jpeg|webp|gif|ico)$/i.test(filePath)) {
             if (/\.bundle\.(css|js)$/i.test(filePath) || /[\\/]js[\\/]wiki[\\/]/i.test(filePath)) {
-                res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+                res.setHeader('Cache-Control', 'public, max-age=3600');
                 return;
             }
             res.setHeader('Cache-Control', 'public, max-age=3600');
@@ -311,7 +333,7 @@ const server = app.listen(config.port, () => {
     console.log(`ИТ-портал: http://localhost:${config.port}`);
     console.log(`OAuth redirect_uri: ${config.redirectUri}`);
     if (!config.yandexClientId || !config.yandexClientSecret) {
-        console.warn('YANDEX_CLIENT_ID / YANDEX_CLIENT_SECRET не заданы — вход через Яндекс недоступен. См. docs/AUTH-SETUP.md');
+        console.warn('YANDEX_CLIENT_ID / YANDEX_CLIENT_SECRET не заданы — вход через Яндекс недоступен. См. docs/guides/AUTH-SETUP.md');
     }
 });
 

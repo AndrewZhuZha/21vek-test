@@ -12,6 +12,7 @@ import {
 } from '../middleware/rateLimit.js';
 import { formatYandexOAuthError } from '../auth/yandexFetch.js';
 import { enrichUserFromDirectory, getCachedDirectoryMeta } from '../auth/yandex360.js';
+import { maybePurgeOAuthAccessTokenFromSession } from '../auth/sessionOAuth.js';
 import {
     buildAuthorizeUrl,
     createOAuthState,
@@ -202,6 +203,8 @@ authRouter.get('/me', authMeLimiter, async (req, res) => {
             }
         }
     }
+
+    maybePurgeOAuthAccessTokenFromSession(req.session, user);
 
     res.json({
         ...user,

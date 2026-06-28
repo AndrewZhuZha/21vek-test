@@ -61,10 +61,14 @@ export const authConfigCheckLimiter = createLimiter(
     pickLimit(60, config.rateLimitAuthConfigCheckMax)
 );
 
-export const trackerIpLimiter = createLimiter(60 * 1000, 10);
+export const trackerIpLimiter = createLimiter(
+    60 * 1000,
+    pickLimit(10, 30)
+);
+
 export const trackerSessionLimiter = createLimiter(
     60 * 1000,
-    30,
+    pickLimit(30, 60),
     sessionOrIpKey('tracker')
 );
 
@@ -81,7 +85,7 @@ export const wikiSessionLimiter = createLimiter(
 
 export const wikiConfigCheckLimiter = createLimiter(
     60 * 1000,
-    pickLimit(60, 300)
+    pickLimit(60, config.rateLimitAuthConfigCheckMax)
 );
 
 export const wikiAssetLimiter = createLimiter(
@@ -90,4 +94,8 @@ export const wikiAssetLimiter = createLimiter(
 );
 
 export const wikiAuditLimiter = createLimiter(15 * 60 * 1000, 5);
-export const healthLimiter = createLimiter(60 * 1000, 120);
+
+export const healthLimiter = createLimiter(
+    60 * 1000,
+    pickLimit(120, config.rateLimitHealthMax)
+);
