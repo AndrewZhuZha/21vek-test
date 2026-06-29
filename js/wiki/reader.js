@@ -296,14 +296,8 @@
     }
 
     function primeFigurePlaceholder(figure, img) {
-        const ratio = readFigureAspectRatio(img);
-        if (ratio) {
-            figure.style.aspectRatio = ratio;
-            figure.style.setProperty('--wiki-figure-min-height', '0px');
-            return;
-        }
-        figure.style.removeProperty('aspect-ratio');
-        figure.style.removeProperty('--wiki-figure-min-height');
+        void img;
+        figure.classList.add('wiki-figure--loading');
     }
 
     function trackFigureImage(figure, img) {
@@ -312,13 +306,6 @@
         const finish = (isError) => {
             figure.classList.remove('wiki-figure--loading');
             figure.classList.add(isError ? 'wiki-figure--error' : 'wiki-figure--ready');
-            if (!isError) {
-                const ratio = readFigureAspectRatio(img);
-                if (ratio) {
-                    figure.style.aspectRatio = ratio;
-                }
-            }
-            figure.style.removeProperty('--wiki-figure-min-height');
         };
 
         if (img.complete) {
@@ -492,7 +479,7 @@
             : '<span class="wiki-tree__toggle-spacer" aria-hidden="true"></span>';
 
         return `
-            <li class="wiki-tree__item${depthClass}" style="--wiki-depth:${depth}" data-slug="${encodeURIComponent(slug)}">
+            <li class="wiki-tree__item${depthClass}" data-wiki-depth="${depth}" data-slug="${encodeURIComponent(slug)}">
                 <div class="wiki-tree__row">
                     ${toggleHtml}
                     <button
@@ -512,7 +499,7 @@
         const title = treeNodeTitle(slug, item.title);
         const depth = Number.isFinite(Number(item.depth)) ? Math.max(0, Number(item.depth)) : 0;
         return `
-            <li class="wiki-tree__item wiki-tree__item--flat" style="--wiki-depth:${depth}">
+            <li class="wiki-tree__item wiki-tree__item--flat" data-wiki-depth="${depth}">
                 <div class="wiki-tree__row">
                     <span class="wiki-tree__toggle-spacer" aria-hidden="true"></span>
                     <button
@@ -1019,7 +1006,7 @@
             return;
         }
 
-        if (window.PortalWikiTour?.start) {
+        if (window.PortalConfig?.wiki?.tour?.enabled !== false) {
             scheduleWikiTour();
         }
     }

@@ -1,5 +1,23 @@
 /* Авторизация: gate и блок профиля */
 
+.visually-hidden-offscreen {
+    position: fixed;
+    opacity: 0;
+    pointer-events: none;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+}
+
+.service-card.is-will-change {
+    will-change: opacity;
+}
+
+.service-group.is-scroll-target,
+.section-group.is-scroll-target {
+    scroll-margin-top: var(--portal-section-scroll-offset, 24px);
+}
+
 /* Пока проверяется сессия — не показываем основной портал (без «мигания») */
 html.portal-auth-pending .app-layout,
 html.portal-auth-pending .skip-link,

@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function scheduleWillChangeReset(card) {
         window.setTimeout(() => {
             if (!card.classList.contains('is-fading')) {
-                card.style.willChange = '';
+                card.classList.remove('is-will-change');
             }
         }, HIDE_ANIMATION_MS);
     }
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showCard(card) {
         clearHideTimer(card);
-        card.style.willChange = 'opacity';
+        card.classList.add('is-will-change');
         if (card.classList.contains('is-hidden')) {
             card.classList.remove('is-hidden');
             card.classList.add('is-fading');
@@ -136,12 +136,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function hideCard(card) {
         if (card.classList.contains('is-hidden')) return;
         clearHideTimer(card);
-        card.style.willChange = 'opacity';
+        card.classList.add('is-will-change');
         card.classList.add('is-fading');
         const timer = setTimeout(() => {
             card.classList.add('is-hidden');
             card.classList.remove('is-fading');
-            card.style.willChange = '';
+            card.classList.remove('is-will-change');
             hideTimers.delete(card);
         }, HIDE_ANIMATION_MS);
         hideTimers.set(card, timer);
@@ -229,9 +229,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const offset = navSticky
             ? Math.round(stickyNav.offsetHeight + stickyTop + 14)
             : 24;
-        getGroups().forEach(group => {
-            group.style.scrollMarginTop = `${offset}px`;
-        });
+        if (window.PortalDynamicStyles) {
+            window.PortalDynamicStyles.setRules('portal-section-offset', `
+.section-group { scroll-margin-top: ${offset}px; }
+`);
+        }
     }
 
     function syncFilterState(query) {

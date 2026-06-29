@@ -2357,6 +2357,9 @@ html {
 }
 
 .portal-tour__popover--center {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: min(24rem, calc(100vw - 2rem));
     text-align: center;
 }
@@ -2383,6 +2386,10 @@ html {
     box-shadow: 0 0 0 9999px rgba(2, 6, 23, 0.68);
     pointer-events: none;
     transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+
+.portal-tour__spotlight--hidden {
+    display: none;
 }
 
 .portal-tour-target {
@@ -2467,6 +2474,24 @@ html {
 
 /* css/auth.css */
 /* Авторизация: gate и блок профиля */
+
+.visually-hidden-offscreen {
+    position: fixed;
+    opacity: 0;
+    pointer-events: none;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+}
+
+.service-card.is-will-change {
+    will-change: opacity;
+}
+
+.service-group.is-scroll-target,
+.section-group.is-scroll-target {
+    scroll-margin-top: var(--portal-section-scroll-offset, 24px);
+}
 
 /* Пока проверяется сессия — не показываем основной портал (без «мигания») */
 html.portal-auth-pending .app-layout,

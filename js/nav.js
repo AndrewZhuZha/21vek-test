@@ -260,7 +260,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        document.addEventListener('portal:filter-changed', syncVisibility);
+        document.addEventListener('portal:filter-changed', () => {
+            syncVisibility();
+            resolveActiveSectionFromScroll();
+        });
 
         window.addEventListener('scroll', () => {
             scheduleScrollSettled();
@@ -321,7 +324,11 @@ function initScrollToTop(scrollToTopHandler) {
         const rawLift = overlap + extraGap - baseBottom;
         const lift = rawLift > 0 ? Math.round(rawLift) : 0;
         if (lift !== lastLift) {
-            button.style.setProperty('--scroll-to-top-lift', `${lift}px`);
+            if (window.PortalDynamicStyles) {
+                window.PortalDynamicStyles.setRules('scroll-to-top-lift', `
+.scroll-to-top { --scroll-to-top-lift: ${lift}px; }
+`);
+            }
             lastLift = lift;
         }
 

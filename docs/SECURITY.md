@@ -21,7 +21,7 @@
 
 ### Transport и headers
 
-- Helmet: CSP, HSTS (prod), CORP `same-origin`, referrerPolicy, Permissions-Policy
+- Helmet: CSP (`style-src 'self'` без `unsafe-inline`), HSTS (prod), CORP `same-origin`, referrerPolicy, Permissions-Policy
 - `dnsPrefetchControl: off`
 - API `/api/auth`, `/api/tracker`: `Cache-Control: no-store`
 - HTML: `no-store`; bundles: `max-age=3600` (versioned → immutable)
@@ -81,7 +81,6 @@ Per-route limiters в [`rateLimit.js`](../backend/src/middleware/rateLimit.js). 
 | Риск | Severity | Mitigation / roadmap |
 |------|----------|----------------------|
 | OAuth token до 7d в session | Medium | Service token + purge; см. [ROADMAP.md](ROADMAP.md) |
-| CSP `unsafe-inline` styles | Low | Externalize critical CSS |
 | Tracker demo in prod | Low | Demo banner; prod API в roadmap |
 | External wiki images | Low | CSP img-src allowlist |
 | `@diplodoc/transform` transitive CVEs | Medium | Timeout + max input; monitor upstream |

@@ -10,6 +10,8 @@
 - Security hardening (CSRF, rate limits, Helmet, session hardening)
 - Scale infrastructure (Redis, nginx static, 3 replicas, load tests)
 - CI: unit tests, smoke, a11y, wiki parser audit
+- **Epic 2 (2026-06-29):** Wiki split — [`yandexWiki.js`](../backend/src/auth/yandexWiki.js) facade + модули `wikiConfig`, `wikiApiClient`, `wikiSanitize`, `wikiRender`, `wikiAssets`, `wikiSearch`, `wikiTree`, `wikiTitles` (+ ранее `wikiMarkup`, `wikiScope`, `wikiCacheKeys`, `wikiAudit`)
+- **Epic 3 (2026-06-29):** Strict CSP — `style-src 'self'` без `unsafe-inline`; Constructed Stylesheets ([`portal-dynamic-styles.js`](../js/portal-dynamic-styles.js)), ранний `auth.css`, data-attributes вместо inline styles
 
 ---
 
@@ -32,34 +34,6 @@
 **Файлы:** [`backend/src/routes/tracker.js`](../backend/src/routes/tracker.js), [`backend/src/tracker/validate.js`](../backend/src/tracker/validate.js), [`js/tracker.js`](../js/tracker.js)
 
 **Owner:** Backend + IT Support
-
----
-
-## Epic 2 — Wiki maintainability
-
-**Цель:** снизить complexity монолита `yandexWiki.js` (~2100 строк).
-
-**Задачи:**
-
-1. Split на модули: `wikiApiClient`, `wikiTransform`, `wikiSanitize`, `wikiCacheLayer`
-2. Incremental migration без изменения API контрактов
-3. Увеличить unit test coverage per module
-
-**Файлы:** [`backend/src/auth/yandexWiki.js`](../backend/src/auth/yandexWiki.js)
-
----
-
-## Epic 3 — CSP без unsafe-inline
-
-**Цель:** убрать `'unsafe-inline'` из `styleSrc` в Helmet CSP.
-
-**Задачи:**
-
-1. Externalize critical inline styles
-2. Audit все `<style>` и inline `style=` в HTML/JS
-3. Regression: axe + visual smoke
-
-**Файлы:** [`backend/src/index.js`](../backend/src/index.js), `css/`, `index.html`, `wiki.html`
 
 ---
 
@@ -107,9 +81,7 @@
 |-------|----------|------------|-------------|
 | Tracker demo only | Medium | Demo banner на главной | Epic 1 |
 | OAuth token в session до 7d | Medium | Service token + purge | Epic 5 |
-| CSP unsafe-inline | Low | Internal-only deployment | Epic 3 |
 | diplodoc transitive CVEs | Medium | Transform timeout + max input | Epic 5 |
-| yandexWiki monolith | Low | — | Epic 2 |
 | Windows Node exit 4294967295 | Low | Restart / Linux prod | — |
 
 ---

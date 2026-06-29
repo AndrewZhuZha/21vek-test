@@ -23,7 +23,7 @@ window.PortalTourSteps = [
         hideProgress: true
     },
     {
-        selector: '#portalAuthMyIssuesBtn',
+        selectors: ['#portalAuthUserBtn', '#portalAuthMenu'],
         title: 'Мои заявки и техника',
         text: 'В меню профиля доступны кнопки «Мои заявки» (Tracker) и «Моя техника» (SMDB) с переходом под вашу учётную запись.',
         placement: 'left',

@@ -94,7 +94,13 @@
         if (!imgEl) {
             return;
         }
-        imgEl.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        if (window.PortalDynamicStyles) {
+            window.PortalDynamicStyles.setRules('wiki-lightbox-transform', `
+.wiki-lightbox__img {
+    transform: translate(${translateX}px, ${translateY}px) scale(${scale});
+}
+`);
+        }
         if (zoomInBtn) {
             zoomInBtn.disabled = scale >= MAX_SCALE - 0.01;
         }

@@ -19,6 +19,7 @@ import {
     getWikiTreePayload,
     getWikiAssetCacheKeyForRequest,
     normalizeWikiSlug,
+    normalizeSearchText,
     searchWikiPages,
     fetchWikiAssetBuffer
 } from '../auth/yandexWiki.js';
@@ -130,7 +131,11 @@ wikiRouter.get('/search', requireAuth, async (req, res) => {
             return;
         }
         const limit = Number(req.query.limit || 20);
-        const normalizedQuery = query.toLowerCase();
+        const normalizedQuery = normalizeSearchText(query);
+        if (normalizedQuery.length > 0 && normalizedQuery.length < 2) {
+            res.json({ query, count: 0, items: [] });
+            return;
+        }
         const cacheKey = getWikiSearchCacheKey(
             config.yandexWikiBaseSlug,
             normalizedQuery,

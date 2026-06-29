@@ -16,7 +16,8 @@ window.PortalTourSpotlight = (function () {
     let nextBtn = null;
     let skipBtn = null;
     let activeTarget = null;
-    let highlightedTarget = null;
+    let highlightedTargets = [];
+    let activeTargetRect = null;
     let rafScheduled = false;
     let onNext = null;
     let onBack = null;
@@ -69,73 +70,123 @@ window.PortalTourSpotlight = (function () {
     }
 
     function clearHighlight() {
-        if (highlightedTarget) {
-            highlightedTarget.classList.remove('portal-tour-target');
-            highlightedTarget = null;
+        highlightedTargets.forEach((node) => {
+            node.classList.remove('portal-tour-target');
+        });
+        highlightedTargets = [];
+        activeTargetRect = null;
+    }
+
+    function resolveStepTargets(step) {
+        if (Array.isArray(step.selectors) && step.selectors.length) {
+            return step.selectors
+                .map((selector) => document.querySelector(selector))
+                .filter(Boolean);
         }
+        const single = step.selector ? document.querySelector(step.selector) : null;
+        return single ? [single] : [];
+    }
+
+    function unionTargetRect(targets) {
+        const rects = targets
+            .map((node) => node.getBoundingClientRect())
+            .filter((rect) => rect.width || rect.height);
+        if (!rects.length) {
+            return null;
+        }
+        const top = Math.min(...rects.map((rect) => rect.top));
+        const left = Math.min(...rects.map((rect) => rect.left));
+        const right = Math.max(...rects.map((rect) => rect.right));
+        const bottom = Math.max(...rects.map((rect) => rect.bottom));
+        return {
+            top,
+            left,
+            right,
+            bottom,
+            width: right - left,
+            height: bottom - top
+        };
+    }
+
+    function applyTourLayoutCss(cssText) {
+        if (window.PortalDynamicStyles) {
+            window.PortalDynamicStyles.setRules('portal-tour-layout', cssText);
+        }
+    }
+
+    function setSpotlightHidden(hidden) {
+        if (!spotlight) return;
+        spotlight.classList.toggle('portal-tour__spotlight--hidden', hidden);
     }
 
     function layoutCurrent() {
         if (!spotlight || !popover) return;
 
         if (root && root.classList.contains('portal-tour--modal')) {
-            positionModalPopover();
+            setSpotlightHidden(true);
+            applyTourLayoutCss('');
             return;
         }
 
-        if (!activeTarget) return;
+        if (!activeTarget && !activeTargetRect) return;
 
-        const rect = activeTarget.getBoundingClientRect();
+        const rect = activeTargetRect || activeTarget.getBoundingClientRect();
         if (!rect.width && !rect.height) {
-            spotlight.style.display = 'none';
+            setSpotlightHidden(true);
+            applyTourLayoutCss('');
             return;
         }
 
-        spotlight.style.display = 'block';
+        setSpotlightHidden(false);
         const top = Math.max(VIEWPORT_MARGIN, rect.top - PADDING);
         const left = Math.max(VIEWPORT_MARGIN, rect.left - PADDING);
         const width = Math.min(window.innerWidth - VIEWPORT_MARGIN * 2, rect.width + PADDING * 2);
         const height = Math.min(window.innerHeight - VIEWPORT_MARGIN * 2, rect.height + PADDING * 2);
 
-        spotlight.style.top = `${top}px`;
-        spotlight.style.left = `${left}px`;
-        spotlight.style.width = `${width}px`;
-        spotlight.style.height = `${height}px`;
+        const popRect = popover.getBoundingClientRect();
+        const gap = 14;
+        const placement = popover.dataset.placement || 'bottom';
+        let popTop = rect.bottom + gap;
+        let popLeft = rect.left + (rect.width - popRect.width) / 2;
 
-        positionPopover(rect, popover.dataset.placement || 'bottom');
+        if (placement === 'top' || placement === 'top-left') {
+            popTop = rect.top - popRect.height - gap;
+        }
+        if (placement === 'top-left') {
+            popLeft = Math.max(VIEWPORT_MARGIN, rect.left);
+        } else if (placement === 'left') {
+            popTop = rect.top + (rect.height - popRect.height) / 2;
+            popLeft = rect.left - popRect.width - gap;
+        } else if (placement === 'right') {
+            popTop = rect.top + (rect.height - popRect.height) / 2;
+            popLeft = rect.right + gap;
+        }
+
+        popLeft = Math.max(VIEWPORT_MARGIN, Math.min(popLeft, window.innerWidth - popRect.width - VIEWPORT_MARGIN));
+        popTop = Math.max(VIEWPORT_MARGIN, Math.min(popTop, window.innerHeight - popRect.height - VIEWPORT_MARGIN));
+
+        applyTourLayoutCss(`
+.portal-tour__spotlight:not(.portal-tour__spotlight--hidden) {
+    display: block;
+    top: ${top}px;
+    left: ${left}px;
+    width: ${width}px;
+    height: ${height}px;
+}
+.portal-tour__popover:not(.portal-tour__popover--center) {
+    top: ${popTop}px;
+    left: ${popLeft}px;
+    transform: none;
+}
+`);
     }
 
     function positionPopover(targetRect, placement) {
-        const popRect = popover.getBoundingClientRect();
-        const gap = 14;
-        let top = targetRect.bottom + gap;
-        let left = targetRect.left + (targetRect.width - popRect.width) / 2;
-
-        if (placement === 'top' || placement === 'top-left') {
-            top = targetRect.top - popRect.height - gap;
-        }
-        if (placement === 'top-left') {
-            left = Math.max(VIEWPORT_MARGIN, targetRect.left);
-        } else if (placement === 'left') {
-            top = targetRect.top + (targetRect.height - popRect.height) / 2;
-            left = targetRect.left - popRect.width - gap;
-        } else if (placement === 'right') {
-            top = targetRect.top + (targetRect.height - popRect.height) / 2;
-            left = targetRect.right + gap;
-        }
-
-        left = Math.max(VIEWPORT_MARGIN, Math.min(left, window.innerWidth - popRect.width - VIEWPORT_MARGIN));
-        top = Math.max(VIEWPORT_MARGIN, Math.min(top, window.innerHeight - popRect.height - VIEWPORT_MARGIN));
-
-        popover.style.top = `${top}px`;
-        popover.style.left = `${left}px`;
-        popover.style.transform = '';
+        layoutCurrent();
     }
 
     function positionModalPopover() {
-        popover.style.top = '50%';
-        popover.style.left = '50%';
-        popover.style.transform = 'translate(-50%, -50%)';
+        applyTourLayoutCss('');
     }
 
     function applyStepContent(step, index, total) {
@@ -179,9 +230,11 @@ window.PortalTourSpotlight = (function () {
 
         clearHighlight();
         activeTarget = null;
+        activeTargetRect = null;
 
         root.classList.add('portal-tour--modal');
-        spotlight.style.display = 'none';
+        setSpotlightHidden(true);
+        applyTourLayoutCss('');
         popover.classList.add('portal-tour__popover--center');
         popover.dataset.placement = 'center';
 
@@ -281,34 +334,38 @@ window.PortalTourSpotlight = (function () {
 
         if (typeof step.prepare === 'function') {
             step.prepare();
+            void document.documentElement.offsetHeight;
         }
 
-        const target = document.querySelector(step.selector);
-        if (!target) {
+        const targets = resolveStepTargets(step);
+        if (!targets.length) {
             return false;
         }
 
-        const targetRect = target.getBoundingClientRect();
-        if (!targetRect.width && !targetRect.height) {
+        const targetRect = unionTargetRect(targets);
+        if (!targetRect || (!targetRect.width && !targetRect.height)) {
             return false;
         }
 
         clearHighlight();
-        activeTarget = target;
-        highlightedTarget = target;
-        target.classList.add('portal-tour-target');
+        activeTarget = targets[0];
+        highlightedTargets = targets;
+        targets.forEach((node) => node.classList.add('portal-tour-target'));
+        activeTargetRect = targetRect;
 
         root.classList.remove('portal-tour--modal');
         popover.classList.remove('portal-tour__popover--center');
-        spotlight.style.display = 'block';
+        setSpotlightHidden(false);
         popover.dataset.placement = step.placement || 'bottom';
 
-        const shouldScrollIntoView = !step.skipScrollIntoView && !isFixedTarget(target);
+        const shouldScrollIntoView = !step.skipScrollIntoView
+            && activeTarget
+            && !isFixedTarget(activeTarget);
         if (shouldScrollIntoView) {
             if (!prefersReducedMotion()) {
-                target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                activeTarget.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
             } else {
-                target.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+                activeTarget.scrollIntoView({ block: 'nearest', behavior: 'auto' });
             }
         }
 
@@ -322,6 +379,7 @@ window.PortalTourSpotlight = (function () {
         document.removeEventListener('keydown', onKeydown);
         clearHighlight();
         activeTarget = null;
+        activeTargetRect = null;
 
         if (root) {
             root.classList.remove('portal-tour--active', 'portal-tour--modal');

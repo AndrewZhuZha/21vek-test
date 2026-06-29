@@ -2,6 +2,26 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveWikiPageTitle } from '../src/auth/yandexWiki.js';
 import { resolveWikiTreeMacros } from '../src/auth/wikiMarkup.js';
+import { pickPageTitle, isLikelyFallbackTitle } from '../src/auth/wikiTitles.js';
+
+test('pickPageTitle prefers Russian name over transliterated slug title', () => {
+    const slug = 'homepage/vpn/vkljuchenie-sdl-windows-dlja-vxoda-v-active-direct';
+    assert.equal(
+        pickPageTitle({
+            title: 'vkljuchenie sdl windows dlja vxoda v active direct',
+            name: 'Включение SDL Windows для входа в Active Directory'
+        }, slug),
+        'Включение SDL Windows для входа в Active Directory'
+    );
+});
+
+test('isLikelyFallbackTitle detects transliterated slug labels with partial tail match', () => {
+    const slug = 'homepage/vpn/vkljuchenie-sdl-windows-dlja-vxoda-v-active-directory';
+    assert.equal(
+        isLikelyFallbackTitle('vkljuchenie sdl windows dlja vxoda v active direct', slug),
+        true
+    );
+});
 
 test('resolveWikiPageTitle extracts Russian heading from content when API title is transliterated slug', () => {
     const slug = 'homepage/instrukcii/kamery-smartpss/ustanovka-prilozhenija';

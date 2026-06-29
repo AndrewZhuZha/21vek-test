@@ -79,6 +79,17 @@ function check(condition, label, detail) {
     }
 }
 
+function assertStyleSrcNoUnsafeInline(cspHeader, label) {
+    const csp = String(cspHeader || '');
+    const styleSrcMatch = csp.match(/style-src[^;]*/i);
+    const styleSrc = styleSrcMatch ? styleSrcMatch[0] : '';
+    check(
+        styleSrc.length > 0 && !/\bunsafe-inline\b/i.test(styleSrc),
+        `${label}: style-src без unsafe-inline`,
+        styleSrc || csp.slice(0, 120)
+    );
+}
+
 console.log(`\nAuth smoke tests → ${baseUrl}\n`);
 
 try {
@@ -210,6 +221,7 @@ try {
         String(index.headers['cache-control'] || '').includes('no-store'),
         'GET / отдаёт Cache-Control: no-store'
     );
+    assertStyleSrcNoUnsafeInline(index.headers['content-security-policy'], 'GET /');
 
     const gateHtml = String(index.body || '');
     check(gateHtml.includes('portalAuthGate'), 'index.html содержит login gate');
@@ -227,6 +239,7 @@ try {
         String(wikiReader.headers['cache-control'] || '').includes('no-store'),
         'GET /wiki/ отдаёт Cache-Control: no-store'
     );
+    assertStyleSrcNoUnsafeInline(wikiReader.headers['content-security-policy'], 'GET /wiki/');
     const wikiHtml = String(wikiReader.body || '');
     check(wikiHtml.includes('id="wikiTree"'), 'wiki.html содержит контейнер дерева');
     check(wikiHtml.includes('/js/wiki/reader.js'), 'wiki.html подключает /js/wiki/reader.js');

@@ -82,11 +82,29 @@ flowchart LR
 GET /api/wiki/page
   → scope guard (wikiScope.js)
   → cache lookup (memory/redis)
-  → Yandex Wiki API (yandexWiki.js)
-  → @diplodoc/transform (timeout + max input)
-  → sanitize-html + rewrite links/assets
+  → Yandex Wiki API (wikiApiClient.js + wikiConfig.js)
+  → render (wikiRender.js → wikiSanitize.js, wikiMarkup.js)
+  → assets (wikiAssets.js)
   → cache store → JSON { html, title, ... }
 ```
+
+**Модули Wiki** ([`backend/src/auth/`](../backend/src/auth/)):
+
+| Модуль | Ответственность |
+|--------|-----------------|
+| [`yandexWiki.js`](../backend/src/auth/yandexWiki.js) | Facade: re-export публичного API + `getWikiPagePayload` |
+| [`wikiConfig.js`](../backend/src/auth/wikiConfig.js) | Org ID, OAuth token, API readiness, cache TTL |
+| [`wikiApiClient.js`](../backend/src/auth/wikiApiClient.js) | HTTP client, slug fetch, error mapping |
+| [`wikiSanitize.js`](../backend/src/auth/wikiSanitize.js) | HTML allowlist, XSS-safe rewrite |
+| [`wikiRender.js`](../backend/src/auth/wikiRender.js) | diplodoc transform, post-process, fallback markdown |
+| [`wikiAssets.js`](../backend/src/auth/wikiAssets.js) | Asset proxy URLs, image resolution, cache keys |
+| [`wikiSearch.js`](../backend/src/auth/wikiSearch.js) | Page search, snapshot meta |
+| [`wikiTree.js`](../backend/src/auth/wikiTree.js) | Tree payload, descendants enrichment |
+| [`wikiTitles.js`](../backend/src/auth/wikiTitles.js) | Title/slug resolution |
+| [`wikiScope.js`](../backend/src/auth/wikiScope.js) | Base slug scope guard |
+| [`wikiCacheKeys.js`](../backend/src/auth/wikiCacheKeys.js) | Cache key builders |
+| [`wikiMarkup.js`](../backend/src/auth/wikiMarkup.js) | Wiki markup helpers |
+| [`wikiAudit.js`](../backend/src/auth/wikiAudit.js) | Optional audit logging |
 
 - **Scope:** только `YANDEX_WIKI_BASE_SLUG` и потомки
 - **Assets:** `/api/wiki/asset` с per-user cache keys (`asset:v2:{authHash}:…`)
@@ -121,7 +139,7 @@ GET /api/wiki/page
 
 ### Порядок скриптов
 
-**`<head>`:** `portal-search-hotkey.js`, `portal-theme-init.js`, `portal.bundle.css`
+**`<head>`:** `portal-search-hotkey.js`, `portal-theme-init.js`, ранний `/css/auth.css`, `portal-dynamic-styles.js`, `portal.bundle.css`
 
 **Главная (конец body):**
 ```
@@ -144,6 +162,7 @@ config.js → config.local.js → auth/errors.js → auth/* → theme → wiki/a
 | `PortalTracker` | `js/tracker.js` | POST `/api/tracker/*` |
 | `PortalSearchIndex` | `js/search-index.js` | Индекс поиска (build) |
 | `PortalWikiApi` | `js/wiki/api.js` | Клиент `/api/wiki/*` |
+| `PortalDynamicStyles` | `js/portal-dynamic-styles.js` | Constructed Stylesheets для динамического layout (CSP-safe) |
 
 ### События
 
